@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "./media/plg_system_aesirx_sso/js",
+    "strict": true,
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["es5", "es6", "dom"],
+    "allowJs": true,
+    "jsx": "react",
+    "sourceMap": true,
+    "downlevelIteration": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["media/plg_system_aesirx_sso/src/**/*"]
+}
