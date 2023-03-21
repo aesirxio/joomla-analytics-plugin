@@ -32,6 +32,7 @@ After that you can run the next commands.
 ### Linux
 
 Alternatively can be used docker-compose with npm and php included, see available commands in `Makefile`:
+_Before build docker container please make sure you set correct USER_ID and GROUP_ID in .env file_
 
 `make init` - initialize libraries
 
