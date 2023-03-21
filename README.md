@@ -1,4 +1,4 @@
-# joomla-analytics-plugin
+# Joomla analytics plugin
 Joomla plugin for tracking and storing the tracking data in the 1st party Aesirx Analytics server.
 
 This plugin is for the latest Joomla form 4.2.9 and newer.
