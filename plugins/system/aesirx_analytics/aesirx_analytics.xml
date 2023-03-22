@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" group="system" method="upgrade" version="4.2">
 	<name>plg_system_aesirx_analytics</name>
-	<creationDate>2023-03</creationDate>
+	<creationDate>March 2023</creationDate>
 	<author>AesirX</author>
 	<authorEmail>info@aesir.io</authorEmail>
 	<authorUrl>dxp.aesir.io</authorUrl>
-	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
+	<copyright>Copyright (C) 2023 Aesir. All rights reserved.</copyright>
 	<license>GNU/GPL</license>
 	<version>1.0.0</version>
 	<description>PLG_SYSTEM_AESIRX_ANALYTICS_DESC</description>
