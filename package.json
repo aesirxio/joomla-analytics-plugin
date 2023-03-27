@@ -14,5 +14,7 @@
     "gulp-composer": "^0.4.5",
     "gulp-zip": "^5.1.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "aesirx-analytics": "^1.0.5"
+  }
 }
