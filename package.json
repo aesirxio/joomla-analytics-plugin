@@ -17,5 +17,8 @@
   "resolutions": {
     "glob-parent": "^5.1.2",
     "shelljs": "^0.8.5"
+  },
+  "dependencies": {
+    "aesirx-analytics": "^1.1.3"
   }
 }
