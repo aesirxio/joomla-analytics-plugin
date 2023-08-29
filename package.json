@@ -19,6 +19,6 @@
     "shelljs": "^0.8.5"
   },
   "dependencies": {
-    "aesirx-analytics": "^1.1.3"
+    "aesirx-analytics": "^2.1.0"
   }
 }
