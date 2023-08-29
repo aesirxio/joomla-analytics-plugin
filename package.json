@@ -16,6 +16,6 @@
   },
   "resolutions": {
     "glob-parent": "^5.1.2",
-    "shelljs": "^0.8.5 "
+    "shelljs": "^0.8.5"
   }
 }
