@@ -14,5 +14,8 @@
     "gulp-composer": "^0.4.5",
     "gulp-zip": "^5.1.0"
   },
-  "dependencies": {}
+  "resolutions": {
+    "glob-parent": "^5.1.2",
+    "shelljs": "^0.8.5 "
+  }
 }
