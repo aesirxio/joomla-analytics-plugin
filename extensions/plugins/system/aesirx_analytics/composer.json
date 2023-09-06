@@ -6,13 +6,9 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
+        "php": ">=7.2",
         "symfony/process": "^5.4",
         "pecee/simple-router": "^5"
-    },
-    "config": {
-        "github-oauth": {
-            "github.com": "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"
-        }
     },
     "require-dev": {
         "voku/portable-utf8": "6.0.12 as 5.4.0",
