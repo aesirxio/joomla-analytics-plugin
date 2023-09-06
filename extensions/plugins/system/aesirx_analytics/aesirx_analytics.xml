@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade">
+	<name>plg_system_aesirx_analytics</name>
+	<creationDate>2023-03</creationDate>
+	<author>AesirX</author>
+	<authorEmail>info@aesir.io</authorEmail>
+	<authorUrl>dxp.aesir.io</authorUrl>
+	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
+	<license>GNU/GPL</license>
+	<version>1.0.0</version>
+	<description>PLG_SYSTEM_AESIRX_ANALYTICS_DESC</description>
+	<namespace path="src">Aesirx\System\AesirxAnalytics</namespace>
+	<files>
+		<folder plugin="aesirx_analytics">services</folder>
+		<filename>aesirx_analytics.xml</filename>
+		<folder>language</folder>
+		<folder>src</folder>
+		<folder>vendor</folder>
+	</files>
+	<media folder="media" destination="plg_system_aesirx_analytics">
+		<folder>assets</folder>
+		<folder>image</folder>
+		<file>assets-manifest.json</file>
+	</media>
+</extension>

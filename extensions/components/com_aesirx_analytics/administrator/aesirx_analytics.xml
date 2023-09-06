@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="component" method="upgrade">
+	<name>com_aesirx_analytics</name>
+	<author>Aesir</author>
+	<creationDate>2023-09</creationDate>
+	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@aesir.io</authorEmail>
+	<authorUrl>dxp.aesir.io</authorUrl>
+	<version>1.0.0</version>
+	<description>COM_AESIRX_ANALYTICS_XML_DESCRIPTION</description>
+	<namespace path="src">Aesirx\Component\AesirxAnalytics</namespace>
+	<administration>
+		<menu>COM_AESIRX_ANALYTICS</menu>
+		<files folder="administrator">
+			<filename>config.xml</filename>
+			<folder>language</folder>
+			<folder>layouts</folder>
+			<folder>services</folder>
+			<folder>src</folder>
+			<folder>tmpl</folder>
+		</files>
+	</administration>
+</extension>

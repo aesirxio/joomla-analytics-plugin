@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="package" method="upgrade">
+	<name>Aesirx Analytics Package</name>
+	<author>Aesir</author>
+	<creationDate>2023-09</creationDate>
+	<packagename>aesirx_analytics</packagename>
+	<version>1.0.0</version>
+	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@aesir.io</authorEmail>
+	<authorUrl>dxp.aesir.io</authorUrl>
+	<blockChildUninstall>true</blockChildUninstall>
+	<files folder="packages">
+		<file type="component" id="com_aesirx_analytics" >com_aesirx_analytics.zip</file>
+		<file type="plugin" id="aesirx_analytics" group="system">plg_system_aesirx_analytics.zip</file>
+	</files>
+</extension>
