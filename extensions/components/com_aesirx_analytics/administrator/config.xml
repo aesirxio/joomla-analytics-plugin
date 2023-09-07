@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config addfieldprefix="Aesirx\Component\AesirxAnalytics\Administrator\Field">
+	<fieldset
+		name="user_options"
+		label="COM_AESIRX_ANALYTICS_CONFIGURATION_GENERAL" >
+		<field
+			name="1st_party_server"
+			type="radio"
+			label="COM_AESIRX_ANALYTICS_CONFIGURATION_1ST_PARTY_SERVER_LABEL"
+			default="internal"
+			>
+			<option value="internal">COM_AESIRX_ANALYTICS_CONFIGURATION_INTERNAL</option>
+			<option value="external">COM_AESIRX_ANALYTICS_CONFIGURATION_EXTERNAL</option>
+		</field>
+		<field name="download_cli"
+			   type="DownloadCli"
+			   showon="1st_party_server:internal"
+			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_DOWNLOAD_CLI_LABEL" />
+		<field name="license"
+			   type="text"
+			   showon="1st_party_server:internal"
+			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_LICENSE_LABEL" />
+		<field name="domain"
+			   type="text"
+			   showon="1st_party_server:external"
+			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_DOMAIN_LABEL" />
+		<field
+				name="consent"
+				type="radio"
+				label="COM_AESIRX_ANALYTICS_CONFIGURATION_CONSENT_LABEL"
+				default="1"
+		>
+			<option value="1">JYES</option>
+			<option value="0">JNO</option>
+		</field>
+		<field name="client_id"
+			   type="text"
+			   required="true"
+			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_CLIENT_ID_LABEL" />
+		<field name="client_secret"
+			   type="text"
+			   required="true"
+			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_CLIENT_SECRET_LABEL" />
+		<field name="bottom_banner"
+			   type="BottomBanner"/>
+	</fieldset>
+</config>

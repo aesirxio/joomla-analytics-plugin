@@ -26,5 +26,5 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "dist/plg_system_aesirx_analytics.zip"
+          artifacts: "dist/pkg_aesirx_analytics.zip"
           generateReleaseNotes: true

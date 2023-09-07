@@ -1,0 +1,28 @@
+{
+    "name": "vshandak/aesirx_analytics",
+    "description": "Aesirx analytics plugin. When you join forces with AesirX, you're not just becoming a Partner - you're also becoming a freedom fighter in the battle for privacy!",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.2",
+        "symfony/process": "^5.4",
+        "pecee/simple-router": "^5"
+    },
+    "require-dev": {
+        "voku/portable-utf8": "6.0.12 as 5.4.0",
+        "joomla/joomla-cms": "4.3.4"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/joomla/joomla-cms"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/joomla-backports/json-api-php.git",
+            "no-api":  true
+        }
+    ]
+}
