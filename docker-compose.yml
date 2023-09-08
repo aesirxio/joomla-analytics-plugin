@@ -10,6 +10,5 @@ services:
     user: ${USER_ID:-0}:${GROUP_ID:-0}
     volumes:
       - .:/workspace
-      - ../../projects/joomla-analytics-plugin:/www
     working_dir: /workspace
     tty: true
