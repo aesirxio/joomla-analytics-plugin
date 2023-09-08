@@ -12,3 +12,4 @@ services:
       - .:/workspace
     working_dir: /workspace
     tty: true
+    platform: linux/amd64
