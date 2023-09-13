@@ -1,9 +1,8 @@
 const path = require('path');
-const { ProvidePlugin, DefinePlugin } = require('webpack');
+const { ProvidePlugin } = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const WebpackAssetsManifest = require('webpack-assets-manifest');
 const { GitRevisionPlugin } = require('git-revision-webpack-plugin');
-const gitRevisionPlugin = new GitRevisionPlugin();
 
 module.exports = {
   mode: 'production',
@@ -42,11 +41,7 @@ module.exports = {
     new ProvidePlugin({
       process: 'process/browser',
     }),
-    new DefinePlugin({
-     // VERSION: JSON.stringify(gitRevisionPlugin.version()),
-      VERSION: '{"version":"1.0.0"}',
-    }),
-
+   
     new WebpackAssetsManifest({
       entrypoints: true,
     }),

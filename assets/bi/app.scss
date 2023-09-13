@@ -1,8 +1,10 @@
 #biapp {
-  margin-left: -20px;
+  margin-left: -32px;
+  margin-top: -47px;
+  margin-right: -32px;
+  
   #all_header {
-    margin-top: 2px;
-    width: calc(100% - 161px) !important;
+    position: relative !important;
   }
   .arrow {
     position: static !important;
@@ -21,27 +23,8 @@
 
   .main_content_dashboard {
     height: 100% !important;
+    padding-top: 30px;
   }
 
-  .sidebar {
-    position: fixed !important;
-  }
-
-  .bi-intergration_layout {
-    margin-left: 80px;
-  }
 }
 
-#wpfooter {
-  display: none;
-}
-
-#wpbody-content {
-  padding-bottom: 0 !important;
-}
-
-.error,
-.notice,
-.updated {
-  display: none;
-}
