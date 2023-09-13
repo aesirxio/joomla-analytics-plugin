@@ -435,7 +435,6 @@ class RouterFactory
 
 		$this->router->addRoute(
 			(new RouteGroup)
-				//->setPrefix('/administrator')
 				->setSettings(['middleware' => [$permissionCheckMiddleware]])
 				->setCallback(
 					function () {

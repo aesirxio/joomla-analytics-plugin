@@ -245,8 +245,9 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		try
 		{
 			$base = Uri::base(true) == '' ? null : Uri::base(true);
+			$needle = '/administrator';
 
-			if ($base == '/administrator')
+			if (substr_compare($base, $needle, -strlen($needle)) === 0)
 			{
 				$newUri = clone Uri::getInstance();
 				$query  = $newUri->getQuery(true);
