@@ -44,8 +44,8 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 	protected const TASKS_MAP = [
 		'analyticsTask_r1.sleep' => [
 			'langConstPrefix' => 'PLG_SYSTEM_AESIRX_ANALYTICS_GEO_CRON',
-			'method' => 'geo',
-			'form' => 'analyticsTaskForm',
+			'method'          => 'geo',
+			'form'            => 'analyticsTaskForm',
 		],
 	];
 
@@ -57,7 +57,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 	public function __construct(AesirxAnalyticsCli $cli, &$subject, $config = [])
 	{
 		$this->autoloadLanguage = true;
-		$this->cli = $cli;
+		$this->cli              = $cli;
 		parent::__construct($subject, $config);
 	}
 
@@ -103,11 +103,11 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 						$wa->registerAndUseScript('plg_system_aesirx_analytics.bi.' . $idx, 'media/plg_system_aesirx_analytics/' . $js, [], ['defer' => true]);
 					}
 
-					$uri = Uri::getInstance();
-					$params = ComponentHelper::getParams('com_aesirx_analytics');
-					$streams = [
+					$uri      = Uri::getInstance();
+					$params   = ComponentHelper::getParams('com_aesirx_analytics');
+					$streams  = [
 						[
-							'name' => $this->getApplication()->get('sitename'),
+							'name'   => $this->getApplication()->get('sitename'),
 							'domain' => $uri->toString(['host']),
 						],
 					];
@@ -156,7 +156,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				$wa->useScript('plg_system_aesirx_analytics.analytics');
 
 				$params = ComponentHelper::getParams('com_aesirx_analytics');
-				$uri = Uri::getInstance();
+				$uri    = Uri::getInstance();
 
 				$domain = $params->get('1st_party_server', 'internal') == 'internal'
 					? $uri->toString(['scheme', 'user', 'pass', 'host', 'port']) . Uri::base(true)
@@ -165,7 +165,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				$consent = $params->get('consent') == '1' ? 'false' : 'true';
 
 				$clientId = $params->get('client_id', '');
-				$secret = $params->get('client_secret', '');
+				$secret   = $params->get('client_secret', '');
 
 				$wa->addInlineScript(
 					'window.aesirx1stparty="' . rtrim($domain, '/') . '";window.disableAnalyticsConsent="' . $consent . '";window.aesirxClientID="' . $clientId . '";window.aesirxClientSecret="' . $secret . '";',
@@ -236,15 +236,36 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 			{
 				header('Content-Type: application/json; charset=utf-8');
 			}
+
 			return $process->getOutput();
 		};
 
+		$oldValue = $_SERVER['REQUEST_URI'];
+
 		try
 		{
+			$base = Uri::base(true) == '' ? null : Uri::base(true);
+
+			if ($base == '/administrator')
+			{
+				$newUri = clone Uri::getInstance();
+				$query  = $newUri->getQuery(true);
+				$path   = $query['path'] ?? null;
+
+				if ($path)
+				{
+					unset($query['path']);
+					$newUri->setPath(rtrim($newUri->getPath(), '/') . '/' . $path);
+					$newUri->setQuery($query);
+
+					$_SERVER['REQUEST_URI'] = $newUri->toString();
+				}
+			}
+
 			echo (new RouterFactory(
 				$callCommand,
 				new IsBackendMiddleware($this->getApplication()),
-				Uri::base(true) == '' ? null : Uri::base(true)
+				$base
 			))
 				->getSimpleRouter()
 				->start();
@@ -253,6 +274,8 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		{
 			if ($e instanceof NotFoundHttpException)
 			{
+				$_SERVER['REQUEST_URI'] = $oldValue;
+
 				return;
 			}
 
@@ -272,6 +295,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 			http_response_code($code);
 			echo json_encode([
 				'error' => $e->getMessage(),
+				'trace' => $e->getTrace(),
 			]);
 		}
 
@@ -280,9 +304,9 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 
 	protected function analyticsConfigIsOk(string $isStorage = null): bool
 	{
-		$params = ComponentHelper::getParams('com_aesirx_analytics');
+		$params  = ComponentHelper::getParams('com_aesirx_analytics');
 		$storage = $params->get('1st_party_server', 'internal');
-		$res = (!empty($storage)
+		$res     = (!empty($storage)
 			&& (
 				($storage == 'internal' && !empty($params->get('license')) && $this->cli->analytics_cli_exists())
 				|| ($storage == 'external' && !empty($params->get('domain')))
@@ -323,11 +347,11 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 	public static function getSubscribedEvents(): array
 	{
 		return [
-			'onAfterInitialise' => 'onAfterInitialise',
-			'onAfterRender' => 'onAfterRender',
-			'onAfterRoute' => 'onAfterRoute',
-			'onTaskOptionsList' => 'advertiseRoutines',
-			'onExecuteTask' => 'standardRoutineHandler',
+			'onAfterInitialise'    => 'onAfterInitialise',
+			'onAfterRender'        => 'onAfterRender',
+			'onAfterRoute'         => 'onAfterRoute',
+			'onTaskOptionsList'    => 'advertiseRoutines',
+			'onExecuteTask'        => 'standardRoutineHandler',
 			'onContentPrepareForm' => 'enhanceTaskItemForm',
 		];
 	}
