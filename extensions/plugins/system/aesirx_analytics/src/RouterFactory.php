@@ -2,9 +2,9 @@
 
 namespace Aesirx\System\AesirxAnalytics;
 
-use Aesirx\System\AesirxAnalytics\Route\Middleware\IsBackendMiddleware;
 use Pecee\Http\Middleware\IMiddleware;
 use Pecee\Http\Request;
+use Pecee\Http\Url;
 use Pecee\SimpleRouter\Event\EventArgument;
 use Pecee\SimpleRouter\Handlers\EventHandler;
 use Pecee\SimpleRouter\Route\IGroupRoute;
@@ -33,12 +33,23 @@ class RouterFactory
 	/**
 	 * @param callable $callback
 	 */
-	public function __construct(callable $callback, IMiddleware $permissionCheckMiddleware, string $basePath = NULL)
+	public function __construct(
+		callable $callback,
+		IMiddleware $permissionCheckMiddleware,
+		?Url $url = null,
+		?string $basePath = NULL
+	)
 	{
 		$this->callback = $callback;
 		$this->router = (new Router)
 			->setRenderMultipleRoutes(FALSE);
 		$this->requestBody = (array) json_decode(file_get_contents('php://input'), TRUE);
+
+		if (!empty($url))
+		{
+			$this->router->getRequest()
+				->setUrl($url);
+		}
 
 		if (!empty($basePath))
 		{

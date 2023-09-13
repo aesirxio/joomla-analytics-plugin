@@ -27,6 +27,7 @@ use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
 use Joomla\Component\Scheduler\Administrator\Task\Status;
 use Joomla\Component\Scheduler\Administrator\Traits\TaskPluginTrait;
 use Joomla\Event\SubscriberInterface;
+use Pecee\Http\Url;
 use Pecee\SimpleRouter\Exceptions\NotFoundHttpException;
 use Throwable;
 
@@ -240,32 +241,29 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 			return $process->getOutput();
 		};
 
-		$oldValue = $_SERVER['REQUEST_URI'];
-
 		try
 		{
 			$base = Uri::base(true) == '' ? null : Uri::base(true);
 			$needle = '/administrator';
+			$newUri = clone Uri::getInstance();
 
 			if (substr_compare($base, $needle, -strlen($needle)) === 0)
 			{
-				$newUri = clone Uri::getInstance();
-				$query  = $newUri->getQuery(true);
-				$path   = $query['path'] ?? null;
+				$query = $newUri->getQuery(true);
+				$path  = $query['path'] ?? null;
 
 				if ($path)
 				{
 					unset($query['path']);
 					$newUri->setPath(rtrim($newUri->getPath(), '/') . '/' . $path);
 					$newUri->setQuery($query);
-
-					$_SERVER['REQUEST_URI'] = $newUri->toString();
 				}
 			}
 
 			echo (new RouterFactory(
 				$callCommand,
 				new IsBackendMiddleware($this->getApplication()),
+				new Url($newUri->toString()),
 				$base
 			))
 				->getSimpleRouter()
@@ -275,8 +273,6 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		{
 			if ($e instanceof NotFoundHttpException)
 			{
-				$_SERVER['REQUEST_URI'] = $oldValue;
-
 				return;
 			}
 
