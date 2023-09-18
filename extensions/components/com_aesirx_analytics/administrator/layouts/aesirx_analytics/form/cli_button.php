@@ -10,7 +10,7 @@
 
 defined('_JEXEC') or die;
 
-use Aesirx\System\AesirxAnalytics\Cli\AesirxAnalyticsCli;
+use AesirxAnalyticsLib\Cli\AesirxAnalyticsCli;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -26,11 +26,11 @@ $container = Factory::getContainer();
  /** @var AesirxAnalyticsCli $cli */
 $cli = $container->get(AesirxAnalyticsCli::class);
 
-if ($cli->analytics_cli_exists())
+if ($cli->analyticsCliExists())
 {
 	try
 	{
-		$cli->process_analytics(['--version']);
+		$cli->processAnalytics(['--version']);
 		?><b class="text-success"><?php echo Text::_('COM_AESIRX_ANALYTICS_CLI_PASSED') ?></b><?php
 	}
 	catch (Throwable $e)
@@ -43,7 +43,7 @@ else
 {
 	try
 	{
-		$cli->get_supported_arch();
+		$cli->getSupportedArch();
 		?><a href="<?php echo $url ?>" class="btn btn-primary">
 		<?php echo Text::_('COM_AESIRX_ANALYTICS_CLICK_DOWNLOAD') ?>
 		</a><?php

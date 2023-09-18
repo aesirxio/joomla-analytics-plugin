@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1dd9fdb5f2fda59a3259b7b420ac134d",
+    "content-hash": "e972bae1bb6376013e377005e701c350",
     "packages": [
         {
             "name": "pecee/simple-router",
@@ -213,6 +213,43 @@
                 }
             ],
             "time": "2023-08-07T10:36:04+00:00"
+        },
+        {
+            "name": "vshandak/aesirx_analytics_lib",
+            "version": "v1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shandak/aesirx-analytics-lib.git",
+                "reference": "88b5e41f64e174fe821c08b90e40f61448d74002"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/shandak/aesirx-analytics-lib/zipball/88b5e41f64e174fe821c08b90e40f61448d74002",
+                "reference": "88b5e41f64e174fe821c08b90e40f61448d74002",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "pecee/simple-router": "^5",
+                "php": ">=7.2",
+                "symfony/process": "^5|^6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AesirxAnalyticsLib\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "description": "Aesirx analytics library.",
+            "support": {
+                "issues": "https://github.com/shandak/aesirx-analytics-lib/issues",
+                "source": "https://github.com/shandak/aesirx-analytics-lib/tree/v1.0.2"
+            },
+            "time": "2023-09-15T14:55:00+00:00"
         }
     ],
     "packages-dev": [
@@ -3108,12 +3145,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/maximebf/php-debugbar.git",
-                "reference": "8ed07eb4f0f6fdc5a733d48c7ee33b127d685c59"
+                "reference": "1bee67191420a999aaaeab865d28cf3ddcb60207"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/8ed07eb4f0f6fdc5a733d48c7ee33b127d685c59",
-                "reference": "8ed07eb4f0f6fdc5a733d48c7ee33b127d685c59",
+                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/1bee67191420a999aaaeab865d28cf3ddcb60207",
+                "reference": "1bee67191420a999aaaeab865d28cf3ddcb60207",
                 "shasum": ""
             },
             "require": {
@@ -3167,7 +3204,7 @@
                 "issues": "https://github.com/maximebf/php-debugbar/issues",
                 "source": "https://github.com/maximebf/php-debugbar/tree/master"
             },
-            "time": "2023-08-18T17:41:05+00:00"
+            "time": "2023-09-08T23:01:51+00:00"
         },
         {
             "name": "nyholm/psr7",
@@ -3544,16 +3581,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.21",
+            "version": "3.0.22",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "4580645d3fc05c189024eb3b834c6c1e4f0f30a1"
+                "reference": "b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/4580645d3fc05c189024eb3b834c6c1e4f0f30a1",
-                "reference": "4580645d3fc05c189024eb3b834c6c1e4f0f30a1",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b",
+                "reference": "b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b",
                 "shasum": ""
             },
             "require": {
@@ -3634,7 +3671,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.21"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.22"
             },
             "funding": [
                 {
@@ -3650,7 +3687,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-07-09T15:24:48+00:00"
+            "time": "2023-09-16T11:49:37+00:00"
         },
         {
             "name": "psr/container",
@@ -6914,7 +6951,9 @@
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=7.2"
+    },
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }

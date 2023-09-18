@@ -10,17 +10,14 @@
 
 namespace Aesirx\Component\AesirxAnalytics\Administrator\Controller;
 
-use Aesirx\System\AesirxAnalytics\Cli\AesirxAnalyticsCli;
-use Joomla\CMS\Application\CMSApplication;
+use AesirxAnalyticsLib\Cli\AesirxAnalyticsCli;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\DI\ContainerAwareInterface;
 use Joomla\DI\ContainerAwareTrait;
-use Joomla\Input\Input;
 use Throwable;
 
 \defined('_JEXEC') or die;
@@ -40,7 +37,7 @@ class DisplayController extends BaseController implements ContainerAwareInterfac
 
 		try
 		{
-			$cli->download_analytics_cli();
+			$cli->downloadAnalyticsCli();
 			$this->setMessage(Text::_('COM_AESIRX_ANALYTICS_DOWNLOADING_SUCCESSFUL'));
 		}
 		catch (Throwable $e)
