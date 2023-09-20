@@ -6,8 +6,8 @@
 	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>info@aesir.io</authorEmail>
-	<authorUrl>dxp.aesir.io</authorUrl>
-	<version>1.0.0</version>
+	<authorUrl>aesir.io</authorUrl>
+	<version>2.0.1</version>
 	<description>COM_AESIRX_ANALYTICS_XML_DESCRIPTION</description>
 	<namespace path="src">Aesirx\Component\AesirxAnalytics</namespace>
 	<administration>
