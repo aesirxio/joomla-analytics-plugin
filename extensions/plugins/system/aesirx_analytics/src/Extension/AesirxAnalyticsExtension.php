@@ -9,11 +9,11 @@
 
 namespace Aesirx\System\AesirxAnalytics\Extension;
 
-use Aesirx\System\AesirxAnalytics\Cli\AesirxAnalyticsCli;
-use Aesirx\System\AesirxAnalytics\Exception\ExceptionWithErrorType;
-use Aesirx\System\AesirxAnalytics\Exception\ExceptionWithResponseCode;
+use AesirxAnalyticsLib\Cli\AesirxAnalyticsCli;
+use AesirxAnalyticsLib\Exception\ExceptionWithErrorType;
+use AesirxAnalyticsLib\Exception\ExceptionWithResponseCode;
 use Aesirx\System\AesirxAnalytics\Route\Middleware\IsBackendMiddleware;
-use Aesirx\System\AesirxAnalytics\RouterFactory;
+use AesirxAnalyticsLib\RouterFactory;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Document\HtmlDocument;
@@ -70,7 +70,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		{
 			if ($this->analyticsConfigIsOk('internal'))
 			{
-				$this->cli->process_analytics(['job', 'geo']);
+				$this->cli->processAnalytics(['job', 'geo']);
 			}
 		}
 		catch (Throwable $e)
@@ -208,7 +208,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$callCommand = function (array $command): string {
 			try
 			{
-				$process = $this->cli->process_analytics($command);
+				$process = $this->cli->processAnalytics($command);
 			}
 			catch (Throwable $e)
 			{
@@ -305,7 +305,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$storage = $params->get('1st_party_server', 'internal');
 		$res     = (!empty($storage)
 			&& (
-				($storage == 'internal' && !empty($params->get('license')) && $this->cli->analytics_cli_exists())
+				($storage == 'internal' && !empty($params->get('license')) && $this->cli->analyticsCliExists())
 				|| ($storage == 'external' && !empty($params->get('domain')))
 			));
 

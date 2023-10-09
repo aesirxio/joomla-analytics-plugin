@@ -10,8 +10,8 @@
 namespace aesirx_analytics\services;
 defined('_JEXEC') || die;
 
-use Aesirx\System\AesirxAnalytics\Cli\AesirxAnalyticsCli;
-use Aesirx\System\AesirxAnalytics\Cli\Env;
+use AesirxAnalyticsLib\Cli\AesirxAnalyticsCli;
+use AesirxAnalyticsLib\Cli\Env;
 use Aesirx\System\AesirxAnalytics\Extension\AesirxAnalyticsExtension;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Extension\PluginInterface;
