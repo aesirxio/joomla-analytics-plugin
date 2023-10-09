@@ -51,6 +51,8 @@
     "postcss": "^8",
     "json5": "^2",
     "minimatch": "^5",
-    "d3-color": "^3.1.0"
+    "d3-color": "^3.1.0",
+    "glob-parent": "^5",
+    "shelljs": "^0.8"
   }
 }
