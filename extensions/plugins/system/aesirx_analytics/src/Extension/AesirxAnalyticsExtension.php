@@ -126,8 +126,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				window.env.REACT_APP_ENDPOINT_URL = "' . rtrim($endpoint, '/') . '";
 				window.env.REACT_APP_DATA_STREAM = JSON.stringify(' . json_encode($streams) . ');
 				window.env.PUBLIC_URL="' . Uri::root() . 'media/plg_system_aesirx_analytics/";
-				window.env.STORAGE="' . $params->get('1st_party_server') . '";
-				window.env.REACT_APP_HEADER_JWT=true;',
+				window.env.STORAGE="' . $params->get('1st_party_server') . '";' . ($params->get('1st_party_server', 'internal') === 'external' ? 'window.env.REACT_APP_HEADER_JWT="true";' : ''),
 						['position' => 'before'], [], ['plg_system_aesirx_analytics.bi.0']
 					);
 				};
