@@ -4,8 +4,44 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e972bae1bb6376013e377005e701c350",
+    "content-hash": "e9a107c3a863540f5b913333d5146086",
     "packages": [
+        {
+            "name": "aesirx/aesirx_analytics_lib",
+            "version": "v1.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aesirxio/aesirx-analytics-lib.git",
+                "reference": "dd157b8a84e87563c332bde631516c9c1789e87b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aesirxio/aesirx-analytics-lib/zipball/dd157b8a84e87563c332bde631516c9c1789e87b",
+                "reference": "dd157b8a84e87563c332bde631516c9c1789e87b",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "pecee/simple-router": "^5",
+                "php": ">=7.2",
+                "symfony/process": "^5|^6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AesirxAnalyticsLib\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "description": "Aesirx analytics library.",
+            "support": {
+                "source": "https://github.com/aesirxio/aesirx-analytics-lib/tree/v1.0.5"
+            },
+            "time": "2023-10-31T09:35:13+00:00"
+        },
         {
             "name": "pecee/simple-router",
             "version": "5.0.0.0",
@@ -213,43 +249,6 @@
                 }
             ],
             "time": "2023-08-07T10:36:04+00:00"
-        },
-        {
-            "name": "vshandak/aesirx_analytics_lib",
-            "version": "v1.0.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/shandak/aesirx-analytics-lib.git",
-                "reference": "88b5e41f64e174fe821c08b90e40f61448d74002"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/shandak/aesirx-analytics-lib/zipball/88b5e41f64e174fe821c08b90e40f61448d74002",
-                "reference": "88b5e41f64e174fe821c08b90e40f61448d74002",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "pecee/simple-router": "^5",
-                "php": ">=7.2",
-                "symfony/process": "^5|^6"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "AesirxAnalyticsLib\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-2.0-or-later"
-            ],
-            "description": "Aesirx analytics library.",
-            "support": {
-                "issues": "https://github.com/shandak/aesirx-analytics-lib/issues",
-                "source": "https://github.com/shandak/aesirx-analytics-lib/tree/v1.0.2"
-            },
-            "time": "2023-09-15T14:55:00+00:00"
         }
     ],
     "packages-dev": [
@@ -3145,12 +3144,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/maximebf/php-debugbar.git",
-                "reference": "1bee67191420a999aaaeab865d28cf3ddcb60207"
+                "reference": "27b3c2f2340d429e466d42ebcd47034bf3cd1850"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/1bee67191420a999aaaeab865d28cf3ddcb60207",
-                "reference": "1bee67191420a999aaaeab865d28cf3ddcb60207",
+                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/27b3c2f2340d429e466d42ebcd47034bf3cd1850",
+                "reference": "27b3c2f2340d429e466d42ebcd47034bf3cd1850",
                 "shasum": ""
             },
             "require": {
@@ -3204,7 +3203,7 @@
                 "issues": "https://github.com/maximebf/php-debugbar/issues",
                 "source": "https://github.com/maximebf/php-debugbar/tree/master"
             },
-            "time": "2023-09-08T23:01:51+00:00"
+            "time": "2023-10-12T16:09:55+00:00"
         },
         {
             "name": "nyholm/psr7",
@@ -3581,16 +3580,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.22",
+            "version": "3.0.33",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b"
+                "reference": "33fa69b2514a61138dd48e7a49f99445711e0ad0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b",
-                "reference": "b6bd1c5f79b2c39e144770eb6d9180fbdb00d09b",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/33fa69b2514a61138dd48e7a49f99445711e0ad0",
+                "reference": "33fa69b2514a61138dd48e7a49f99445711e0ad0",
                 "shasum": ""
             },
             "require": {
@@ -3671,7 +3670,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.22"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.33"
             },
             "funding": [
                 {
@@ -3687,7 +3686,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-09-16T11:49:37+00:00"
+            "time": "2023-10-21T14:00:39+00:00"
         },
         {
             "name": "psr/container",
@@ -3739,16 +3738,16 @@
         },
         {
             "name": "psr/http-client",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/http-client.git",
-                "reference": "0955afe48220520692d2d09f7ab7e0f93ffd6a31"
+                "reference": "bb5906edc1c324c9a05aa0873d40117941e5fa90"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/http-client/zipball/0955afe48220520692d2d09f7ab7e0f93ffd6a31",
-                "reference": "0955afe48220520692d2d09f7ab7e0f93ffd6a31",
+                "url": "https://api.github.com/repos/php-fig/http-client/zipball/bb5906edc1c324c9a05aa0873d40117941e5fa90",
+                "reference": "bb5906edc1c324c9a05aa0873d40117941e5fa90",
                 "shasum": ""
             },
             "require": {
@@ -3785,9 +3784,9 @@
                 "psr-18"
             ],
             "support": {
-                "source": "https://github.com/php-fig/http-client/tree/1.0.2"
+                "source": "https://github.com/php-fig/http-client"
             },
-            "time": "2023-04-10T20:12:12+00:00"
+            "time": "2023-09-23T14:17:50+00:00"
         },
         {
             "name": "psr/http-factory",
@@ -4403,16 +4402,16 @@
         },
         {
             "name": "symfony/error-handler",
-            "version": "v5.4.26",
+            "version": "v5.4.29",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/error-handler.git",
-                "reference": "b26719213a39c9ba57520cbc5e52bfcc5e8d92f9"
+                "reference": "328c6fcfd2f90b64c16efaf0ea67a311d672f078"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/error-handler/zipball/b26719213a39c9ba57520cbc5e52bfcc5e8d92f9",
-                "reference": "b26719213a39c9ba57520cbc5e52bfcc5e8d92f9",
+                "url": "https://api.github.com/repos/symfony/error-handler/zipball/328c6fcfd2f90b64c16efaf0ea67a311d672f078",
+                "reference": "328c6fcfd2f90b64c16efaf0ea67a311d672f078",
                 "shasum": ""
             },
             "require": {
@@ -4454,7 +4453,7 @@
             "description": "Provides tools to manage errors and ease debugging PHP code",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/error-handler/tree/v5.4.26"
+                "source": "https://github.com/symfony/error-handler/tree/v5.4.29"
             },
             "funding": [
                 {
@@ -4470,7 +4469,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-07-16T16:48:57+00:00"
+            "time": "2023-09-06T21:54:06+00:00"
         },
         {
             "name": "symfony/ldap",
@@ -5349,16 +5348,16 @@
         },
         {
             "name": "symfony/string",
-            "version": "v5.4.26",
+            "version": "v5.4.29",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/string.git",
-                "reference": "1181fe9270e373537475e826873b5867b863883c"
+                "reference": "e41bdc93def20eaf3bfc1537c4e0a2b0680a152d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/string/zipball/1181fe9270e373537475e826873b5867b863883c",
-                "reference": "1181fe9270e373537475e826873b5867b863883c",
+                "url": "https://api.github.com/repos/symfony/string/zipball/e41bdc93def20eaf3bfc1537c4e0a2b0680a152d",
+                "reference": "e41bdc93def20eaf3bfc1537c4e0a2b0680a152d",
                 "shasum": ""
             },
             "require": {
@@ -5415,7 +5414,7 @@
                 "utf8"
             ],
             "support": {
-                "source": "https://github.com/symfony/string/tree/v5.4.26"
+                "source": "https://github.com/symfony/string/tree/v5.4.29"
             },
             "funding": [
                 {
@@ -5431,20 +5430,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-06-28T12:46:07+00:00"
+            "time": "2023-09-13T11:47:41+00:00"
         },
         {
             "name": "symfony/var-dumper",
-            "version": "v5.4.28",
+            "version": "v5.4.29",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-dumper.git",
-                "reference": "684b36ff415e1381d4a943c3ca2502cd2debad73"
+                "reference": "6172e4ae3534d25ee9e07eb487c20be7760fcc65"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/684b36ff415e1381d4a943c3ca2502cd2debad73",
-                "reference": "684b36ff415e1381d4a943c3ca2502cd2debad73",
+                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/6172e4ae3534d25ee9e07eb487c20be7760fcc65",
+                "reference": "6172e4ae3534d25ee9e07eb487c20be7760fcc65",
                 "shasum": ""
             },
             "require": {
@@ -5504,7 +5503,7 @@
                 "dump"
             ],
             "support": {
-                "source": "https://github.com/symfony/var-dumper/tree/v5.4.28"
+                "source": "https://github.com/symfony/var-dumper/tree/v5.4.29"
             },
             "funding": [
                 {
@@ -5520,7 +5519,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-24T13:38:36+00:00"
+            "time": "2023-09-12T10:09:58+00:00"
         },
         {
             "name": "symfony/web-link",
@@ -5611,16 +5610,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v5.4.23",
+            "version": "v5.4.30",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "4cd2e3ea301aadd76a4172756296fe552fb45b0b"
+                "reference": "c6980e82a6656f6ebfabfd82f7585794cb122554"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/4cd2e3ea301aadd76a4172756296fe552fb45b0b",
-                "reference": "4cd2e3ea301aadd76a4172756296fe552fb45b0b",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/c6980e82a6656f6ebfabfd82f7585794cb122554",
+                "reference": "c6980e82a6656f6ebfabfd82f7585794cb122554",
                 "shasum": ""
             },
             "require": {
@@ -5666,7 +5665,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v5.4.23"
+                "source": "https://github.com/symfony/yaml/tree/v5.4.30"
             },
             "funding": [
                 {
@@ -5682,7 +5681,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-04-23T19:33:36+00:00"
+            "time": "2023-10-27T18:36:14+00:00"
         },
         {
             "name": "tobscure/json-api",
