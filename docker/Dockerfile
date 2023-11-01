@@ -21,7 +21,7 @@ RUN chmod uga+x /usr/local/bin/install-php-extensions && sync && \
     ldap \
     sockets;
 
-ENV NODE_PACKAGE_URL  https://unofficial-builds.nodejs.org/download/release/v16.9.1/node-v16.9.1-linux-x64-musl.tar.gz
+ENV NODE_PACKAGE_URL  https://unofficial-builds.nodejs.org/download/release/v16.14.0/node-v16.14.0-linux-x64-musl.tar.gz
 
 RUN apk add libstdc++
 WORKDIR /opt

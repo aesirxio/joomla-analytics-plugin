@@ -1,5 +1,5 @@
 {
-    "name": "vshandak/aesirx_analytics",
+    "name": "aesirx/aesirx_analytics",
     "description": "Aesirx analytics plugin. When you join forces with AesirX, you're not just becoming a Partner - you're also becoming a freedom fighter in the battle for privacy!",
     "type": "project",
     "license": "GPL-2.0-or-later",
@@ -7,7 +7,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.2",
-        "vshandak/aesirx_analytics_lib": "^1"
+        "aesirx/aesirx_analytics_lib": "^1"
     },
     "require-dev": {
         "voku/portable-utf8": "6.0.12 as 5.4.0",
