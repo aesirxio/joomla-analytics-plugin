@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <extension type="package" method="upgrade">
 	<name>Aesirx Analytics Package</name>
+	<description>Joomla plugin for tracking and storing the tracking data in the 1st party Aesirx Analytics server.</description>
 	<author>Aesir</author>
 	<creationDate>2023-09</creationDate>
 	<packagename>aesirx_analytics</packagename>

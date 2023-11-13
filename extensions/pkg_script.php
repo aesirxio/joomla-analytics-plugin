@@ -1,5 +1,7 @@
 <?php
 
+defined('_JEXEC') or die();
+
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseInterface;
