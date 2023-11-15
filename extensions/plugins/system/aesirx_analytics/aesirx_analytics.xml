@@ -10,9 +10,11 @@
 	<version>1.0.0</version>
 	<description>PLG_SYSTEM_AESIRX_ANALYTICS_DESC</description>
 	<namespace path="src">Aesirx\System\AesirxAnalytics</namespace>
+	<!-- <scriptfile>plg_script.php</scriptfile> -->
 	<files>
 		<folder plugin="aesirx_analytics">services</folder>
 		<filename>aesirx_analytics.xml</filename>
+		<filename>composer.json</filename>
 		<folder>language</folder>
 		<folder>src</folder>
 		<folder>vendor</folder>

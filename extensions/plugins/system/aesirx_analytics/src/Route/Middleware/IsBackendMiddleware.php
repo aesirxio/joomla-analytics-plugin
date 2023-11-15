@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @license	GNU General Public License version 3;
+ */
+
 namespace Aesirx\System\AesirxAnalytics\Route\Middleware;
 
 use Joomla\CMS\Application\CMSApplication;
