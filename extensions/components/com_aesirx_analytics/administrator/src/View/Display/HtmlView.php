@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @license	GNU General Public License version 3;
+ */
+
 namespace Aesirx\Component\AesirxAnalytics\Administrator\View\Display;
 
 \defined('_JEXEC') or die;

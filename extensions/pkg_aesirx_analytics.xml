@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <extension type="package" method="upgrade">
 	<name>Aesirx Analytics Package</name>
-	<author>Aesir</author>
+	<description>Joomla plugin for tracking and storing the tracking data in the 1st party Aesirx Analytics server.</description>
+	<author>AesirX</author>
 	<creationDate>2023-09</creationDate>
 	<packagename>aesirx_analytics</packagename>
 	<version>1.0.0</version>
@@ -15,4 +16,7 @@
 		<file type="component" id="com_aesirx_analytics" >com_aesirx_analytics.zip</file>
 		<file type="plugin" id="aesirx_analytics" group="system">plg_system_aesirx_analytics.zip</file>
 	</files>
+	<updateservers>
+		<server type="collection">https://github.com/aesirxio/wordpress-analytics-plugin/releases/download/3.0.0/plg_aesirx_analytics.zip</server>
+	</updateservers>
 </extension>
