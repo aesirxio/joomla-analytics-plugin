@@ -2,7 +2,7 @@
   margin-left: -32px;
   margin-top: -47px;
   margin-right: -32px;
-  
+  background-color: #fff;
   #all_header {
     position: relative !important;
   }
@@ -25,6 +25,14 @@
     height: 100% !important;
     padding-top: 30px;
   }
-
 }
-
+[data-bs-theme='dark'] {
+  #biapp {
+    background-color: #101529;
+  }
+}
+.aesirxsso.modal .btn {
+  background-color: var(--aesirxsso-btn-bg);
+  color: var(--aesirxsso-btn-color);
+  border: var(--aesirxsso-btn-border-width) solid var(--aesirxsso-btn-border-color);
+}
