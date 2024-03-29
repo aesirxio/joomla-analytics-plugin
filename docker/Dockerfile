@@ -1,4 +1,4 @@
-FROM php:7.2-cli-alpine3.12
+FROM php:7.4-cli-alpine3.12
 ## Utilities
 RUN apk add --no-cache --update zip zlib-dev git python3 py3-pip nodejs npm keychain make gcc g++ pkgconfig pixman-dev cairo-dev pango-dev libjpeg-turbo-dev giflib-dev ldb-dev libldap openldap-dev ;
 RUN npm install --global yarn
