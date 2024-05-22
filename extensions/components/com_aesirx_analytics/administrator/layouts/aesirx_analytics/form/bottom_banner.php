@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * @license	GNU General Public License version 3;
+ */
+
+defined('_JEXEC') or die();
+
 use Joomla\CMS\Language\Text;
 
 ?><div class="aesirx_analytics_info">

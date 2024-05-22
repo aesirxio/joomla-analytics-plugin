@@ -1,6 +1,12 @@
 <?php
 
+/**
+ * @license	GNU General Public License version 3;
+ */
+
 namespace Aesirx\Component\AesirxAnalytics\Administrator\Field;
+
+defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\FormField;
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="component" method="upgrade">
 	<name>com_aesirx_analytics</name>
-	<author>Aesir</author>
+	<author>AesirX</author>
 	<creationDate>2023-09</creationDate>
 	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
