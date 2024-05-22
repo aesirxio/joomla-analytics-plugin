@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @license	GNU General Public License version 3;
+ */
+
 namespace Aesirx\Component\AesirxAnalytics\Administrator\Extension;
 
 use Joomla\CMS\Extension\BootableExtensionInterface;
