@@ -8,23 +8,23 @@
     "packages": [
         {
             "name": "aesirx/aesirx_analytics_lib",
-            "version": "v1.0.10",
+            "version": "v1.0.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aesirxio/aesirx-analytics-lib.git",
-                "reference": "e9e45c7ff432dc00fe3ff51b4778c383b1f4f426"
+                "reference": "c5b4e092111fc7ebbf8ed203d86ad23b66ccec96"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aesirxio/aesirx-analytics-lib/zipball/e9e45c7ff432dc00fe3ff51b4778c383b1f4f426",
-                "reference": "e9e45c7ff432dc00fe3ff51b4778c383b1f4f426",
+                "url": "https://api.github.com/repos/aesirxio/aesirx-analytics-lib/zipball/c5b4e092111fc7ebbf8ed203d86ad23b66ccec96",
+                "reference": "c5b4e092111fc7ebbf8ed203d86ad23b66ccec96",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "pecee/simple-router": "^5",
                 "php": ">=7.2",
-                "symfony/process": "^5"
+                "symfony/process": "^5|^6"
             },
             "type": "library",
             "autoload": {
@@ -38,9 +38,9 @@
             ],
             "description": "Aesirx analytics library.",
             "support": {
-                "source": "https://github.com/aesirxio/aesirx-analytics-lib/tree/v1.0.10"
+                "source": "https://github.com/aesirxio/aesirx-analytics-lib/tree/v1.0.11"
             },
-            "time": "2024-05-22T04:54:28+00:00"
+            "time": "2024-05-23T10:49:45+00:00"
         },
         {
             "name": "pecee/simple-router",
