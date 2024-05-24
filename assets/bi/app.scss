@@ -3,6 +3,17 @@
   margin-top: -47px;
   margin-right: -32px;
   background-color: #fff;
+  label {
+    color: var(--aesirxui-body-color) !important;
+  }
+  .text-body {
+    color: var(--aesirxui-body-color) !important;
+  }
+  aside.sidebar,
+  .item_collap,
+  .wrapper_header_logo {
+    display: none !important;
+  }
   #all_header {
     position: relative !important;
   }

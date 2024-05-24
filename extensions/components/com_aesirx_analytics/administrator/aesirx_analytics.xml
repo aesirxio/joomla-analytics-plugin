@@ -12,6 +12,44 @@
 	<namespace path="src">Aesirx\Component\AesirxAnalytics</namespace>
 	<administration>
 		<menu>COM_AESIRX_ANALYTICS</menu>
+		<submenu>
+			<menu
+				link="option=com_aesirx_analytics"
+				view="aesirx-bi-dashboard"
+				>
+				COM_AESIRX_ANALYTICS_DASHBOARD
+			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-acquisition"
+				page="aesirx-bi-acquisition"
+				>
+				COM_AESIRX_ANALYTICS_ACQUISITION
+			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-behavior"
+				page="aesirx-bi-behavior"
+				>
+				COM_AESIRX_ANALYTICS_BEHAVIOR
+			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-consents"
+				page="aesirx-bi-consents"
+				>
+				COM_AESIRX_ANALYTICS_CONSENT
+			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-utm-tracking"
+				page="aesirx-bi-utm-tracking"
+				>
+				COM_AESIRX_ANALYTICS_TRACKING
+			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-visitors"
+				page="aesirx-bi-visitors"
+				>
+				COM_AESIRX_ANALYTICS_VISITORS
+			</menu>
+		</submenu>
 		<files folder="administrator">
 			<filename>config.xml</filename>
 			<folder>language</folder>
