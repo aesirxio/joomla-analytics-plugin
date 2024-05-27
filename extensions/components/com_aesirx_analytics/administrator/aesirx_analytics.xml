@@ -49,6 +49,12 @@
 				>
 				COM_AESIRX_ANALYTICS_VISITORS
 			</menu>
+			<menu
+				link="option=com_aesirx_analytics&amp;page=aesirx-bi-flow-list"
+				page="aesirx-bi-flow-list"
+				>
+				COM_AESIRX_ANALYTICS_USER_EXPERIENCE
+			</menu>
 		</submenu>
 		<files folder="administrator">
 			<filename>config.xml</filename>
