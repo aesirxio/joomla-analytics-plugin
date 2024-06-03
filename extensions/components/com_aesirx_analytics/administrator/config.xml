@@ -36,10 +36,12 @@
 		<field name="client_id"
 			   type="text"
 			   required="true"
+			   showon="1st_party_server:external"
 			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_CLIENT_ID_LABEL" />
 		<field name="client_secret"
 			   type="text"
 			   required="true"
+			   showon="1st_party_server:external"
 			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_CLIENT_SECRET_LABEL" />
 		<field name="bottom_banner"
 			   type="BottomBanner"/>
