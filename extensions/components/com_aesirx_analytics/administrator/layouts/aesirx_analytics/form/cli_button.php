@@ -20,7 +20,12 @@ extract($displayData);
 
 $query = Uri::getInstance()->getQuery(true);
 
-$url = Route::_('index.php?option=com_aesirx_analytics&task=display.download_cli&return=' . $query['return'] ?? '');
+if(isset($query['return'])) {
+	$url = Route::_('index.php?option=com_aesirx_analytics&task=display.download_cli&return=' . $query['return']);
+}
+else{
+	$url = Route::_('index.php?option=com_aesirx_analytics&task=display.download_cli');
+}
 
 $container = Factory::getContainer();
  /** @var AesirxAnalyticsCli $cli */
