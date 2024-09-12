@@ -660,7 +660,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         
                 return true;  // Success
         
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 return false;
             }
@@ -865,7 +865,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 $db->execute();
                 return true;
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 // Log and handle error
                 Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
@@ -919,7 +919,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 $db->execute();
                 return true;
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 // Log and handle error
                 Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 throw new Exception(Text::_('PLG_SYSTEM_AESIRX_ANALYTICS_ERROR_INSERT_CONSENT'), 500);
@@ -990,7 +990,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1021,7 +1021,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1054,7 +1054,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (RuntimeException $e) {
+            } catch (Exception $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
