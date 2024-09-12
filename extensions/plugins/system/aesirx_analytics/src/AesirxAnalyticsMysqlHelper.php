@@ -3,12 +3,19 @@
 namespace Aesirx\System\AesirxAnalytics;
 
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Http\HttpFactory;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Registry\Registry;
 
 if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     Class AesirxAnalyticsMysqlHelper
     {
         public function aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind) {
-            $db = JFactory::getDbo();
+            $db = Factory::getDbo();
     
             $page = $params['page'] ?? 1;
             $pageSize = $params['page_size'] ?? 20;
@@ -35,8 +42,8 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     
             try {
                 // Check if there's caching (replace `get_option` with Joomla equivalent, if needed)
-                $plugin = JPluginHelper::getPlugin('system', 'aesirx_analytics');
-                $plugin_params = new JRegistry($plugin->params);
+                $plugin = PluginHelper::getPlugin('system', 'aesirx_analytics');
+                $plugin_params = new Registry($plugin->params);
 
                 if ($plugin_params->get('cache_time', 0) > 0) {
                     $cache = JFactory::getCache('aesirx_analytics_cache_group', '');
@@ -114,14 +121,14 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     
             } catch (Exception $e) {
                 // Log any errors
-                JFactory::getApplication()->enqueueMessage('Query error: ' . $e->getMessage(), 'error');
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 return false;
             }
         }
     
         public function aesirx_analytics_get_statistics_per_field($groups = [], $selects = [], $params = []) {
     
-           $db = JFactory::getDbo();
+            $db = Factory::getDbo();
             
             // Define the main select statements
             $select = [
@@ -156,8 +163,6 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 $db->quoteName('#__analytics_events.event_name') . " = " . $db->quote('visit'),
                 $db->quoteName('#__analytics_events.event_type') . " = " . $db->quote('action')
             ];
-            
-            $bind = ['visit', 'action'];
     
             self::aesirx_analytics_add_filters($params, $where_clause, $bind);
     
@@ -174,12 +179,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             }
     
             if ($acquisition) {
-                $where_clause[] = "#__analytics_flows.multiple_events = %d";
-                $bind[] = 0;
-            }
-            if ($acquisition) {
                 $where_clause[] = $db->quoteName('#__analytics_flows.multiple_events') . " = " . (int)0;
-                $bind[] = 0;
             }
 
             // Build the total SQL query
@@ -264,6 +264,8 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         }
     
         function aesirx_analytics_add_filters($params, &$where_clause, &$bind) {
+            $inputFilter = InputFilter::getInstance();
+
             foreach ([$params['filter'] ?? null, $params['filter_not'] ?? null] as $filter_array) {
                 $is_not = $filter_array === (isset($params['filter_not']) ? $params['filter_not'] : null);
                 if (empty($filter_array)) {
@@ -278,7 +280,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             try {
                                 $where_clause[] = "UNIX_TIMESTAMP(#__analytics_events." . $key . ") >= " . strtotime($list[0]);
                             } catch (Exception $e) {
-                                JLog::add('Validation error: ' . $e->getMessage(), JLog::ERROR, 'jerror');
+                                Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                                 throw new InvalidArgumentException('"start" filter is not correct');
                             }
                             break;
@@ -286,13 +288,13 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             try {
                                 $where_clause[] = "UNIX_TIMESTAMP(#__analytics_events." . $key . ") < " . strtotime($list[0]) . " +1 day";
                             } catch (Exception $e) {
-                                JLog::add('Validation error: ' . $e->getMessage(), JLog::ERROR, 'jerror');
+                                Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                                 throw new InvalidArgumentException('"end" filter is not correct');
                             }
                             break;
                         case 'event_name':
                         case 'event_type':
-                            $where_clause[] = '#__analytics_events.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ( ' . implode(', ', $list) . ')';
+                            $where_clause[] = '#__analytics_events.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ( ' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
                             break;
                         case 'city':
                         case 'isp':
@@ -304,7 +306,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         case 'browser_version':
                         case 'device':
                         case 'lang':
-                            $where_clause[] = '#__analytics_visitors.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', $list) . ')';
+                            $where_clause[] = '#__analytics_visitors.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
                             break;
                         default:
                             break;
@@ -351,7 +353,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $parsed_url = Uri::getInstance($url);
     
             if ($parsed_url === false || empty($parsed_url->getHost())) {
-                JLog::add(JText::_('Domain not found'), JLog::ERROR, 'aesirx-analytics');
+                Log::add(JText::_('Domain not found'), Log::ERROR, 'aesirx-analytics');
                 return false;
             }
     
@@ -365,18 +367,24 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         }
     
         function aesirx_analytics_find_visitor_by_fingerprint_and_domain($fingerprint, $domain) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
+
+            // Sanitize the inputs
+            $fingerprint = $inputFilter->clean($fingerprint, 'STRING');
+            $domain = $inputFilter->clean($domain, 'STRING');
     
             // Query to fetch the visitor
             try {
-                // doing direct database calls to custom tables
-                $visitor = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare(
-                        "SELECT * 
-                        FROM {$wpdb->prefix}analytics_visitors
-                        WHERE fingerprint = %s AND domain = %s", 
-                        sanitize_text_field($fingerprint), sanitize_text_field($domain))
-                );
+                $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_visitors'))
+                ->where($db->quoteName('fingerprint') . ' = ' . $db->quote($fingerprint))
+                ->where($db->quoteName('domain') . ' = ' . $db->quote($domain));
+    
+                // Execute the query
+                $db->setQuery($query);
+                $visitor = $db->loadObject();
     
                 if ($visitor) {
                     $res = [
@@ -394,6 +402,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         'visitor_consents' => [],
                     ];
     
+                    // If geo information exists, include it in the response
                     if ($visitor->geo_created_at) {
                         $res['geo'] = [
                             'country' => [
@@ -406,13 +415,18 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             'created_at' => $visitor->geo_created_at,
                         ];
                     }
+
+                    // Query to fetch visitor flows
+                    $flowQuery = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__analytics_flows'))
+                    ->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($visitor->uuid))
+                    ->order($db->quoteName('id'));
+
+                    $db->setQuery($flowQuery);
+                    $flows = $db->loadObjectList();
     
-                    // Query to fetch the visitor flows
-                    // doing direct database calls to custom tables
-                    $flows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                        $wpdb->prepare("SELECT * FROM {$wpdb->prefix}analytics_flows WHERE visitor_uuid = %s ORDER BY id", sanitize_text_field($visitor->uuid))
-                    );
-    
+                    // If flows exist, format the visitor flow data
                     if ($flows) {
                         $ret_flows = [];
                         foreach ($flows as $flow) {
@@ -431,60 +445,83 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     
                 return null;
             } catch (Exception $e) {
-                error_log('Query error: ' . $e->getMessage());
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+                 // Log the error
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false; 
             }
         }
     
         function aesirx_analytics_create_visitor($visitor) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
     
             try {
                 if (empty($visitor['geo'])) {
-                    // doing direct database calls to custom tables
-                    $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-                        $wpdb->prefix . 'analytics_visitors',
-                        [
-                            'fingerprint'      => sanitize_text_field($visitor['fingerprint']),
-                            'uuid'             => sanitize_text_field($visitor['uuid']),
-                            'ip'               => sanitize_text_field($visitor['ip']),
-                            'user_agent'       => sanitize_text_field($visitor['user_agent']),
-                            'device'           => sanitize_text_field($visitor['device']),
-                            'browser_name'     => sanitize_text_field($visitor['browser_name']),
-                            'browser_version'  => sanitize_text_field($visitor['browser_version']),
-                            'domain'           => sanitize_text_field($visitor['domain']),
-                            'lang'             => sanitize_text_field($visitor['lang'])
-                        ],
-                        [
-                            '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
-                        ]
-                    );
+                    $query = $db->getQuery(true)
+                    ->insert($db->quoteName('#__analytics_visitors'))
+                    ->columns([
+                        $db->quoteName('fingerprint'),
+                        $db->quoteName('uuid'),
+                        $db->quoteName('ip'),
+                        $db->quoteName('user_agent'),
+                        $db->quoteName('device'),
+                        $db->quoteName('browser_name'),
+                        $db->quoteName('browser_version'),
+                        $db->quoteName('domain'),
+                        $db->quoteName('lang')
+                    ])
+                    ->values(implode(',', [
+                        $db->quote($inputFilter->clean($visitor['fingerprint'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['uuid'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['ip'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['user_agent'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['device'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['browser_name'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['browser_version'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['domain'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor['lang'], 'STRING'))
+                    ]));
                 } else {
                     $geo = $visitor['geo'];
-                    // doing direct database calls to custom tables
-                    $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-                        $wpdb->prefix . 'analytics_visitors',
-                        [
-                            'fingerprint'      => sanitize_text_field($visitor['fingerprint']),
-                            'uuid'             => sanitize_text_field($visitor['uuid']),
-                            'ip'               => sanitize_text_field($visitor['ip']),
-                            'user_agent'       => sanitize_text_field($visitor['user_agent']),
-                            'device'           => sanitize_text_field($visitor['device']),
-                            'browser_name'     => sanitize_text_field($visitor['browser_name']),
-                            'browser_version'  => sanitize_text_field($visitor['browser_version']),
-                            'domain'           => sanitize_text_field($visitor['domain']),
-                            'lang'             => sanitize_text_field($visitor['lang']),
-                            'country_code'     => sanitize_text_field($geo['country']['code']),
-                            'country_name'     => sanitize_text_field($geo['country']['name']),
-                            'city'             => sanitize_text_field($geo['city']),
-                            'isp'              => sanitize_text_field($geo['isp']),
-                            'geo_created_at'   => sanitize_text_field($geo['created_at'])
-                        ],
-                        [
-                            '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
-                        ]
-                    );
+                    $query = $db->getQuery(true)
+                        ->insert($db->quoteName('#__analytics_visitors'))
+                        ->columns([
+                            $db->quoteName('fingerprint'),
+                            $db->quoteName('uuid'),
+                            $db->quoteName('ip'),
+                            $db->quoteName('user_agent'),
+                            $db->quoteName('device'),
+                            $db->quoteName('browser_name'),
+                            $db->quoteName('browser_version'),
+                            $db->quoteName('domain'),
+                            $db->quoteName('lang'),
+                            $db->quoteName('country_code'),
+                            $db->quoteName('country_name'),
+                            $db->quoteName('city'),
+                            $db->quoteName('isp'),
+                            $db->quoteName('geo_created_at')
+                        ])
+                        ->values(implode(',', [
+                            $db->quote($inputFilter->clean($visitor['fingerprint'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['uuid'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['ip'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['user_agent'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['device'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['browser_name'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['browser_version'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['domain'], 'STRING')),
+                            $db->quote($inputFilter->clean($visitor['lang'], 'STRING')),
+                            $db->quote($inputFilter->clean($geo['country']['code'], 'STRING')),
+                            $db->quote($inputFilter->clean($geo['country']['name'], 'STRING')),
+                            $db->quote($inputFilter->clean($geo['city'], 'STRING')),
+                            $db->quote($inputFilter->clean($geo['isp'], 'STRING')),
+                            $db->quote($inputFilter->clean($geo['created_at'], 'STRING'))
+                        ]));
                 }
+
+                // Execute the insert query
+                $db->setQuery($query);
+                $db->execute();
         
                 if (!empty($visitor['visitor_flows'])) {
                     foreach ($visitor['visitor_flows'] as $flow) {
@@ -494,115 +531,144 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         
                 return true;
             } catch (Exception $e) {
-                error_log('Query error: ' . $e->getMessage());
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false;
             }
         }
     
         function aesirx_analytics_create_visitor_event($visitor_event) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
     
             try {
                 // Insert event
-                // doing direct database calls to custom tables
-                $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-                    $wpdb->prefix . 'analytics_events',
-                    [
-                        'uuid'         => sanitize_text_field($visitor_event['uuid']),
-                        'visitor_uuid' => sanitize_text_field($visitor_event['visitor_uuid']),
-                        'flow_uuid'    => sanitize_text_field($visitor_event['flow_uuid']),
-                        'url'          => sanitize_text_field($visitor_event['url']),
-                        'referer'      => sanitize_text_field($visitor_event['referer']),
-                        'start'        => sanitize_text_field($visitor_event['start']),
-                        'end'          => sanitize_text_field($visitor_event['end']),
-                        'event_name'   => sanitize_text_field($visitor_event['event_name']),
-                        'event_type'   => sanitize_text_field($visitor_event['event_type'])
-                    ],
-                    [
-                        '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'
-                    ]
-                );
+                // Prepare the insert query for the event
+                $query = $db->getQuery(true)
+                    ->insert($db->quoteName('#__analytics_events'))
+                    ->columns([
+                        $db->quoteName('uuid'),
+                        $db->quoteName('visitor_uuid'),
+                        $db->quoteName('flow_uuid'),
+                        $db->quoteName('url'),
+                        $db->quoteName('referer'),
+                        $db->quoteName('start'),
+                        $db->quoteName('end'),
+                        $db->quoteName('event_name'),
+                        $db->quoteName('event_type')
+                    ])
+                    ->values(implode(',', [
+                        $db->quote($inputFilter->clean($visitor_event['uuid'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['visitor_uuid'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['flow_uuid'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['url'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['referer'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['start'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['end'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['event_name'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_event['event_type'], 'STRING'))
+                    ]));
+
+                // Execute the query to insert the event
+                $db->setQuery($query);
+                $db->execute();
     
-                // Insert event attributes
+                // Insert event attributes if they exist
                 if (!empty($visitor_event['attributes'])) {
-                    $values = [];
-                    $placeholders = [];
-    
                     foreach ($visitor_event['attributes'] as $attribute) {
-                        // doing direct database calls to custom tables
-                        $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-                            $wpdb->prefix . 'analytics_event_attributes',
-                            array(
-                                'event_uuid' => $visitor_event->uuid,
-                                'name'       => $attribute->name,
-                                'value'      => $attribute->value
-                            ),
-                            array(
-                                '%s',
-                                '%s',
-                                '%s'
-                            )
-                        );
+                        $query = $db->getQuery(true)
+                            ->insert($db->quoteName('#__analytics_event_attributes'))
+                            ->columns([
+                                $db->quoteName('event_uuid'),
+                                $db->quoteName('name'),
+                                $db->quoteName('value')
+                            ])
+                            ->values(implode(',', [
+                                $db->quote($inputFilter->clean($visitor_event['uuid'], 'STRING')),
+                                $db->quote($inputFilter->clean($attribute['name'], 'STRING')),
+                                $db->quote($inputFilter->clean($attribute['value'], 'STRING'))
+                            ]));
+                        
+                        // Execute the query to insert the event attribute
+                        $db->setQuery($query);
+                        $db->execute();
                     }     
                 }
     
                 return true;
             } catch (Exception $e) {
-                error_log('Query error: ' . $e->getMessage());
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false;
             }
         }
     
         function aesirx_analytics_create_visitor_flow($visitor_uuid, $visitor_flow) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
     
             try {
-                // doing direct database calls to custom tables
-                $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-                    $wpdb->prefix . 'analytics_flows',
-                    [
-                        'visitor_uuid'    => sanitize_text_field($visitor_uuid),
-                        'uuid'            => sanitize_text_field($visitor_flow['uuid']),
-                        'start'           => sanitize_text_field($visitor_flow['start']),
-                        'end'             => sanitize_text_field($visitor_flow['end']),
-                        'multiple_events' => sanitize_text_field($visitor_flow['multiple_events']) ? 1 : 0
-                    ],
-                    [
-                        '%s', '%s', '%s', '%s', '%d'
-                    ]
-                );
-        
+                $query = $db->getQuery(true)
+                    ->insert($db->quoteName('#__analytics_flows'))
+                    ->columns([
+                        $db->quoteName('visitor_uuid'),
+                        $db->quoteName('uuid'),
+                        $db->quoteName('start'),
+                        $db->quoteName('end'),
+                        $db->quoteName('multiple_events')
+                    ])
+                    ->values(implode(',', [
+                        $db->quote($inputFilter->clean($visitor_uuid, 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_flow['uuid'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_flow['start'], 'STRING')),
+                        $db->quote($inputFilter->clean($visitor_flow['end'], 'STRING')),
+                        $db->quote((int) $visitor_flow['multiple_events'])
+                    ]));
+
+                // Execute the query to insert the visitor flow
+                $db->setQuery($query);
+                $db->execute();
+
                 return true;
             } catch (Exception $e) {
-                error_log('Query error: ' . $e->getMessage());
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false;
             }
         }
     
         function aesirx_analytics_mark_visitor_flow_as_multiple($visitor_flow_uuid) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
     
             // Ensure UUID is properly formatted for the database
-            $uuid_str = (string) $uuid;
+            $uuid_str = (string) $inputFilter->clean($visitor_flow_uuid, 'STRING');
     
-            // need $wpdb->query() due to the complexity of the JSON manipulation required
-            // doing direct database calls to custom tables
-            $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "UPDATE {$wpdb->prefix}visitor
-                    SET visitor_flows = JSON_SET(visitor_flows, CONCAT('$[', JSON_UNQUOTE(JSON_SEARCH(visitor_flows, 'one', %s)), '].multiple_events'), true)
-                    WHERE JSON_CONTAINS(visitor_flows, JSON_OBJECT('uuid', %s))",
-                    sanitize_text_field($uuid_str), sanitize_text_field($uuid_str)
-                )
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+            try {
+                // Custom query for JSON manipulation in MySQL
+                $query = "
+                    UPDATE #__visitor
+                    SET visitor_flows = JSON_SET(visitor_flows, 
+                        CONCAT('$[', JSON_UNQUOTE(JSON_SEARCH(visitor_flows, 'one', ?)), '].multiple_events'), true)
+                    WHERE JSON_CONTAINS(visitor_flows, JSON_OBJECT('uuid', ?))
+                ";
+        
+                // Prepare and bind the query
+                $db->setQuery($query)
+                   ->bind(1, $uuid_str)
+                   ->bind(2, $uuid_str);
+        
+                // Execute the query
+                $db->execute();
+        
+                return true;  // Success
+        
+            } catch (RuntimeException $e) {
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false;
             }
         }
     
         function aesirx_analytics_add_consent_filters($params, &$where_clause, &$bind) {
+            $inputFilter = InputFilter::getInstance();
+
             foreach ([$params['filter'] ?? null, $params['filter_not'] ?? null] as $filter_array) {
                 $is_not = $filter_array === (isset($params['filter_not']) ? $params['filter_not'] : null);
                 if (empty($filter_array)) {
@@ -615,25 +681,22 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                     switch ($key) {
                         case 'start':
                             try {
-                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) >= %d";
-                                $bind[] = strtotime($list[0]);
+                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) >= " . strtotime($list[0]);
                             } catch (Exception $e) {
-                                error_log('Validation error: ' . $e->getMessage());
-                                return new WP_Error('validation_error', esc_html__('"start" filter is not correct', 'aesirx-analytics'), ['status' => 400]);
+                                Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                                throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"start" filter is not correct'), 400);
                             }
                             break;
                         case 'end':
                             try {
-                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) < %d";
-                                $bind[] = strtotime($list[0] . ' +1 day');
+                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) < " . strtotime($list[0]) . " +1 day";
                             } catch (Exception $e) {
-                                error_log('Validation error: ' . $e->getMessage());
-                                return new WP_Error('validation_error', esc_html__('"end" filter is not correct', 'aesirx-analytics'), ['status' => 400]);
+                                Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                                throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"end" filter is not correct'), 400);
                             }
                             break;
                         case 'domain':
-                            $where_clause[] = 'domain ' . ($is_not ? 'NOT ' : '') . 'IN (%s)';
-                            $bind[] = implode(', ', $list);
+                            $where_clause[] = 'domain ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
                             break;
                         default:
                             break;
@@ -649,20 +712,18 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 switch ($key) {
                     case 'start':
                         try {
-                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") >= %d";
-                            $bind[] = strtotime($list[0]);
+                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") >= " . strtotime($list[0]);
                         } catch (Exception $e) {
-                            error_log('Validation error: ' . $e->getMessage());
-                            return new WP_Error('validation_error', esc_html__('"start" filter is not correct', 'aesirx-analytics'), ['status' => 400]);
+                            Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                            throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"start" filter is not correct'), 400);
                         }
                         break;
                     case 'end':
                         try {
-                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") < %d";
-                            $bind[] = strtotime($list[0] . ' +1 day');
+                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") < " . strtotime($list[0]) . " +1 day";
                         } catch (Exception $e) {
-                            error_log('Validation error: ' . $e->getMessage());
-                            return new WP_Error('validation_error', esc_html__('"end" filter is not correct', 'aesirx-analytics'), ['status' => 400]);
+                            Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                            throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"end" filter is not correct'), 400);
                         }
                         break;
                     default:
@@ -672,439 +733,533 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         }
     
         function aesirx_analytics_find_wallet($network, $address) {
-            global $wpdb;
+            // Get the database object
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
 
-            // doing direct database calls to custom tables
-            $wallet = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}analytics_wallet WHERE network = %s AND address = %s",
-                    sanitize_text_field($network), sanitize_text_field($address)
-                )
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+            // Sanitize the inputs
+            $network = $inputFilter->clean($network, 'STRING');
+            $address = $inputFilter->clean($address, 'STRING');
+
+            try {
+                // Build the query
+                $query = $db->getQuery(true)
+                            ->select('*')
+                            ->from($db->quoteName('#__analytics_wallet'))
+                            ->where($db->quoteName('network') . ' = ' . $db->quote($network))
+                            ->where($db->quoteName('address') . ' = ' . $db->quote($address));
+        
+                // Execute the query
+                $db->setQuery($query);
+                $wallet = $db->loadObject();
+        
+                return $wallet;
+            } catch (Exception $e) {
+                // Log the error and throw an exception
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
             }
-    
-            return $wallet;
         }
     
         function aesirx_analytics_add_wallet($uuid, $network, $address, $nonce) {
-            global $wpdb;
+            // Get the database object
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
+
+            // Sanitize the inputs
+            $uuid = $inputFilter->clean($uuid, 'STRING');
+            $network = $inputFilter->clean($network, 'STRING');
+            $address = $inputFilter->clean($address, 'STRING');
+            $nonce = $inputFilter->clean($nonce, 'STRING');
+
+            // Create a wallet object for the insert
+            $wallet = (object) [
+                'uuid'    => $uuid,
+                'network' => $network,
+                'address' => $address,
+                'nonce'   => $nonce,
+            ];
     
-            // doing direct database calls to custom tables
-            $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->prefix . 'analytics_wallet',
-                [
-                    'uuid'     => sanitize_text_field($uuid),
-                    'network'  => sanitize_text_field($network),
-                    'address'  => sanitize_text_field($address),
-                    'nonce'    => sanitize_text_field($nonce)
-                ],
-                [
-                    '%s', '%s', '%s', '%s'
-                ]
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+            try {
+                // Insert the wallet data into the database
+                $db->insertObject('#__analytics_wallet', $wallet);
+        
+                return true;
+            } catch (Exception $e) {
+                // Log the error and throw an exception
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
             }
         }
     
         function aesirx_analytics_update_nonce($network, $address, $nonce) {
-            global $wpdb;
+            // Get the database object
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
 
-            // doing direct database calls to custom tables
-            $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prefix . 'analytics_wallet',
-                array(
-                    'nonce' => sanitize_text_field($nonce)
-                ),
-                array(
-                    'network' => sanitize_text_field($network),
-                    'address' => sanitize_text_field($address)
-                ),
-                array(
-                    '%s'  // Data type for 'nonce'
-                ),
-                array(
-                    '%s', // Data type for 'network'
-                    '%s'  // Data type for 'address'
-                )
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+            // Sanitize the input values
+            $network = $inputFilter->clean($network, 'STRING');
+            $address = $inputFilter->clean($address, 'STRING');
+            $nonce = $inputFilter->clean($nonce, 'STRING');
+
+            // Prepare the update query
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__analytics_wallet'))
+                ->set($db->quoteName('nonce') . ' = ' . $db->quote($nonce))
+                ->where($db->quoteName('network') . ' = ' . $db->quote($network))
+                ->where($db->quoteName('address') . ' = ' . $db->quote($address));
+
+            try {
+                // Execute the query
+                $db->setQuery($query);
+                $db->execute();
+
+                return true;
+            } catch (Exception $e) {
+                // Log the error and throw an exception
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
             }
         }
     
         function aesirx_analytics_add_consent($uuid, $consent, $datetime, $web3id = null, $wallet_uuid = null, $expiration = null) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
     
+            // Prepare the data array
             $data = array(
-                'uuid'      => sanitize_text_field($uuid),
-                'consent'   => sanitize_text_field($consent),
+                'uuid'      => $inputFilter->clean($uuid, 'STRING'),
+                'consent'   => $inputFilter->clean($consent, 'STRING'),
                 'datetime'  => $datetime
             );
             
             // Conditionally add wallet_uuid
             if (!empty($wallet_uuid)) {
-                $data['wallet_uuid'] = sanitize_text_field($wallet_uuid);
+                $data['wallet_uuid'] = $inputFilter->clean($wallet_uuid, 'STRING');
             }
-            
+
             // Conditionally add web3id
             if (!empty($web3id)) {
-                $data['web3id'] = sanitize_text_field($web3id);
+                $data['web3id'] = $inputFilter->clean($web3id, 'STRING');
             }
-            
+
             // Conditionally add expiration
             if (!empty($expiration)) {
                 $data['expiration'] = $expiration;
             }
             
-            // Prepare the data types based on the keys
-            $data_types = array_fill(0, count($data), '%s'); // Adjust the types as needed
-            
+            // Build the insert query
+            $query = $db->getQuery(true);
+            $columns = array_keys($data);
+            $values = array_map(array($db, 'quote'), array_values($data));
+
+            // Insert data into custom table 'analytics_consent'
+            $query
+                ->insert($db->quoteName('#__analytics_consent')) // Joomla prefix uses '#__' for table prefix
+                ->columns($db->quoteName($columns))
+                ->values(implode(',', $values));
+
+            $db->setQuery($query);
+
             // Execute the insert
-            // doing direct database calls to custom tables
-            $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->prefix . 'analytics_consent',
-                $data,
-                $data_types
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+            try {
+                $db->execute();
+                return true;
+            } catch (RuntimeException $e) {
+                // Log and handle error
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
             }
         }
     
         function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null) {
-            global $wpdb;
-    
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
+
+            // Prepare the data array
             $data = array(
-                'uuid'         => wp_generate_uuid4(),
-                'visitor_uuid' => $visitor_uuid,
+                'uuid'         => uniqid('', true),
+                'visitor_uuid' => $inputFilter->clean($visitor_uuid, 'STRING')
             );
-            
+
             // Conditionally add consent_uuid
             if (!empty($consent_uuid)) {
-                $data['consent_uuid'] = $consent_uuid;
+                $data['consent_uuid'] = $inputFilter->clean($consent_uuid, 'STRING');
             }
-            
+
             // Conditionally add consent
             if (!empty($consent)) {
-                $data['consent'] = intval($consent);
+                $data['consent'] = (int) $consent;
             }
-            
+
             // Conditionally add datetime
             if (!empty($datetime)) {
                 $data['datetime'] = $datetime;
             }
-            
+
             // Conditionally add expiration
             if (!empty($expiration)) {
                 $data['expiration'] = $expiration;
             }
             
-            // Prepare the data types based on the keys
-            $data_types = array_fill(0, count($data), '%s'); // Default to '%s' for all
-            
-            if (isset($data['consent'])) {
-                $data_types[array_search('consent', array_keys($data))] = '%d'; // Change to '%d' if consent is an integer
-            }
-            
+            // Build the insert query
+            $query = $db->getQuery(true);
+            $columns = array_keys($data);
+            $values = array_map(array($db, 'quote'), array_values($data));
+
+            // Insert data into the custom table 'analytics_visitor_consent'
+            $query
+                ->insert($db->quoteName('#__analytics_visitor_consent')) 
+                ->columns($db->quoteName($columns))
+                ->values(implode(',', $values));
+
+            $db->setQuery($query);
+    
             // Execute the insert
-            // doing direct database calls to custom tables
-            $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $wpdb->prefix . 'analytics_visitor_consent',
-                $data,
-                $data_types
-            );
-    
-            if ($wpdb->last_error) {
-                error_log('Query error: ' . $wpdb->last_error);
-                return new WP_Error('db_insert_error', esc_html__('Could not insert consent', 'aesirx-analytics'), ['status' => 500]);
+            try {
+                $db->execute();
+                return true;
+            } catch (RuntimeException $e) {
+                // Log and handle error
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('PLG_SYSTEM_AESIRX_ANALYTICS_ERROR_INSERT_CONSENT'), 500);
             }
-    
-            return true;
         }
     
         function aesirx_analytics_group_consents_by_domains($consents) {
-            $consent_domain_list = [];
+            $inputFilter = InputFilter::getInstance(); // Joomla's input filter for sanitization
+            $consentDomainList = [];
     
             foreach ($consents as $consent) {
                 if (empty($consent['visitor'])) {
                     continue;
                 }
     
-                $visitor_domain = isset($consent['visitor'][0]['domain']) ? $consent['visitor'][0]['domain'] : null;
-                if ($visitor_domain === null) {
+                 // Use InputFilter to sanitize data
+                $visitorDomain = isset($consent['visitor'][0]['domain']) ? $inputFilter->clean($consent['visitor'][0]['domain'], 'STRING') : null;
+                
+                if ($visitorDomain === null) {
                     continue;
                 }
     
-                if (!isset($consent_domain_list[$visitor_domain])) {
-                    $consent_domain_list[$visitor_domain] = [];
+                if (!isset($consentDomainList[$visitorDomain])) {
+                    $consentDomainList[$visitorDomain] = [];
                 }
     
-                $consent_domain_list[$visitor_domain][] = [
-                    'uuid' => $consent['uuid'],
-                    'wallet_uuid' => $consent['wallet_uuid'],
-                    'address' => $consent['address'],
-                    'network' => $consent['network'],
-                    'web3id' => $consent['web3id'],
-                    'consent' => $consent['consent'],
-                    'datetime' => $consent['datetime'],
-                    'expiration' => $consent['expiration']
+                // Sanitize each data field
+                $consentDomainList[$visitorDomain][] = [
+                    'uuid' => $inputFilter->clean($consent['uuid'], 'STRING'),
+                    'wallet_uuid' => $inputFilter->clean($consent['wallet_uuid'], 'STRING'),
+                    'address' => $inputFilter->clean($consent['address'], 'STRING'),
+                    'network' => $inputFilter->clean($consent['network'], 'STRING'),
+                    'web3id' => $inputFilter->clean($consent['web3id'], 'STRING'),
+                    'consent' => (int)$consent['consent'], // consent is cast to integer
+                    'datetime' => $inputFilter->clean($consent['datetime'], 'STRING'),
+                    'expiration' => $inputFilter->clean($consent['expiration'], 'STRING')
                 ];
             }
     
-            $consents_by_domain = [];
-    
-            foreach ($consent_domain_list as $domain => $domain_consents) {
-                $consents_by_domain[] = [
+            $consentsByDomain = [];
+
+            foreach ($consentDomainList as $domain => $domainConsents) {
+                $consentsByDomain[] = [
                     'domain' => $domain,
-                    'consents' => $domain_consents
+                    'consents' => $domainConsents
                 ];
             }
-    
-            return $consents_by_domain;
+
+            return $consentsByDomain;
         }
     
         function aesirx_analytics_validate_string($nonce, $wallet, $singnature) {
+            $inputFilter = InputFilter::getInstance();
 
-            $api_url = 'http://dev01.aesirx.io:8888/validate/string?nonce=' 
-            . sanitize_text_field($nonce) . '&wallet=' 
-            . sanitize_text_field($wallet) . '&signature=' 
-            . sanitize_text_field($singnature);
-            $response = wp_remote_get($api_url, array(
+            $apiUrl = 'http://dev01.aesirx.io:8888/validate/string?nonce=' 
+            . $inputFilter->clean($nonce, 'STRING') . '&wallet=' 
+            . $inputFilter->clean($wallet, 'STRING') . '&signature=' 
+            . $inputFilter->clean($signature, 'STRING');
+
+            // Use Joomla's HttpFactory to perform a GET request
+            $http = HttpFactory::getHttp();
+            $options = array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
                 ),
-            ));
+            );
 
-            if (is_wp_error($response)) {
-                $error_message = $response->get_error_message();
-                error_log('API error: ' . $error_message);
-                return new WP_Error('validation_error', esc_html__('Something went wrong', 'aesirx-analytics'));
+            try {
+                // Execute the GET request
+                $response = $http->get($apiUrl, $options);
+            } catch (RuntimeException $e) {
+                // Log error and handle exception
+                Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
+                return false;
             }
 
-            $body = wp_remote_retrieve_body($response);
+            // Retrieve the response body
+            $body = $response->body;
             $data = json_decode($body, true);
 
             return $data;
         }
 
         function aesirx_analytics_validate_address($wallet) {
-            $api_url = 'http://dev01.aesirx.io:8888/validate/wallet?wallet=' . sanitize_text_field($wallet);
-            $response = wp_remote_get($api_url, array(
+            $inputFilter = InputFilter::getInstance();
+
+            // Build the API URL with sanitized parameters
+            $apiUrl = 'http://dev01.aesirx.io:8888/validate/wallet?wallet=' 
+                . $inputFilter->clean($wallet, 'STRING');
+           // Use Joomla's HttpFactory to perform a GET request
+            $http = HttpFactory::getHttp();
+            $options = array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
                 ),
-            ));
+            );
 
-            if (is_wp_error($response)) {
-                $error_message = $response->get_error_message();
-                error_log('API error: ' . $error_message);
-                return new WP_Error('validation_error', esc_html__('Something went wrong', 'aesirx-analytics'));
+            try {
+                // Execute the GET request
+                $response = $http->get($apiUrl, $options);
+            } catch (RuntimeException $e) {
+                // Log error and handle exception
+                Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
+                return false;
             }
-
-            $body = wp_remote_retrieve_body($response);
+        
+            // Retrieve the response body
+            $body = $response->body;
             $data = json_decode($body, true);
-
+        
             return $data;
         }
 
         function aesirx_analytics_validate_contract($token) {
-            $api_url = 'http://dev01.aesirx.io:8888/validate/contract';
-            $response = wp_remote_get($api_url, array(
+            // Get the InputFilter instance for sanitizing inputs
+            $inputFilter = InputFilter::getInstance();
+
+            // API URL
+            $apiUrl = 'http://dev01.aesirx.io:8888/validate/contract';
+
+            // Use Joomla's HttpFactory to perform a GET request
+            $http = HttpFactory::getHttp();
+            $options = array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . sanitize_text_field($token),
+                    'Authorization' => 'Bearer ' . $inputFilter->clean($token, 'STRING'),
                 ),
-            ));
+            );
 
-            if (is_wp_error($response)) {
-                $error_message = $response->get_error_message();
-                error_log('API error: ' . $error_message);
-                return new WP_Error('validation_error', esc_html__('Something went wrong', 'aesirx-analytics'));
+            try {
+                // Execute the GET request
+                $response = $http->get($apiUrl, $options);
+            } catch (RuntimeException $e) {
+                // Log error and handle exception
+                Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
+                return false;
             }
 
-            $body = wp_remote_retrieve_body($response);
+            // Retrieve the response body
+            $body = $response->body;
             $data = json_decode($body, true);
 
             return $data;
         }
     
-        function aesirx_analytics_expired_consent($consent_uuid, $expiration) {
-            global $wpdb;
-    
+        function aesirx_analytics_expired_consent($consentUuid, $expiration) {
             try {
-                // Format the expiration date if it is set
-                $data = array(
-                    'expiration' => $expiration ? $expiration : null,
-                );
-                
-                $where = array(
-                    'uuid' => sanitize_text_field($consent_uuid),
-                );
-                
-                // Execute the update
-                // doing direct database calls to custom tables
-                $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prefix . 'analytics_consent',
-                    $data,
-                    $where,
-                    array('%s'),  // Data type for 'expiration'
-                    array('%s')   // Data type for 'uuid'
-                );
+                 // Get the Joomla database object
+                $db = Factory::getDbo();
+                $query = $db->getQuery(true);
 
-                if ($wpdb->last_error) {
-                    error_log('Query error: ' . $wpdb->last_error);
-                    return new WP_Error($wpdb->last_error);
-                }
+                // Get InputFilter for sanitization
+                $inputFilter = InputFilter::getInstance();
+
+                // Prepare the data for update
+                $data = [
+                    'expiration' => $expiration ? $inputFilter->clean($expiration, 'STRING') : null,
+                ];
+                
+                // Prepare the condition for the update
+                $conditions = [
+                    $db->quoteName('uuid') . ' = ' . $db->quote($inputFilter->clean($consentUuid, 'STRING')),
+                ];
+
+                // Create the update query
+                $query->update($db->quoteName('#__analytics_consent'))
+                    ->set($db->quoteName('expiration') . ' = ' . $db->quote($data['expiration']))
+                    ->where($conditions);
+
+                // Execute the query
+                $db->setQuery($query);
+                $db->execute();
+
                 return true;
             } catch (Exception $e) {
-                error_log("Query error: " . $e->getMessage());
-                return new WP_Error('db_update_error', esc_html__('There was a problem updating the data in the database.', 'aesirx-analytics'), ['status' => 500]);
+                // Log the error and return false or handle the error
+                Log::add('Database update error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage('There was a problem updating the data in the database.', 'error');
+                return false;
             }
         }
     
         function aesirx_analytics_find_visitor_by_uuid($uuid) {
-            global $wpdb;
-
             try {
-                // Execute the queries
-                // doing direct database calls to custom tables
-                $visitor_result = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}analytics_visitors WHERE uuid = %s",
-                        sanitize_text_field($uuid)
-                    )
-                );
+                 // Get Joomla database object
+                $db = Factory::getDbo();
+                $inputFilter = InputFilter::getInstance();
 
-                // Execute the query
-                // doing direct database calls to custom tables
-                $flows_result = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare(
-                        "SELECT * FROM {$wpdb->prefix}analytics_flows WHERE visitor_uuid = %s ORDER BY id",
-                        sanitize_text_field($uuid)
-                    )
-                );
-    
-                if ($visitor_result) {
-                    // Create the visitor object
-                    $visitor = (object)[
-                        'fingerprint' => $visitor_result->fingerprint,
-                        'uuid' => $visitor_result->uuid,
-                        'ip' => $visitor_result->ip,
-                        'user_agent' => $visitor_result->user_agent,
-                        'device' => $visitor_result->device,
-                        'browser_name' => $visitor_result->browser_name,
-                        'browser_version' => $visitor_result->browser_version,
-                        'domain' => $visitor_result->domain,
-                        'lang' => $visitor_result->lang,
-                        'visitor_flows' => null,
-                        'geo' => null,
-                        'visitor_consents' => [],
-                    ];
-    
-                    if ($visitor_result->geo_created_at) {
-                        $visitor->geo = (object)[
-                            'country' => (object)[
-                                'name' => $visitor_result->country_name,
-                                'code' => $visitor_result->country_code,
-                            ],
-                            'city' => $visitor_result->city,
-                            'region' => $visitor_result->region,
-                            'isp' => $visitor_result->isp,
-                            'created_at' => $visitor_result->geo_created_at,
-                        ];
-                    }
-    
-                    if (!empty($flows_result)) {
-                        $visitor_flows = array_map(function($flow) {
-                            return (object)[
-                                'uuid' => $flow->uuid,
-                                'start' => $flow->start,
-                                'end' => $flow->end,
-                                'multiple_events' => $flow->multiple_events,
-                            ];
-                        }, $flows_result);
-    
-                        $visitor->visitor_flows = $visitor_flows;
-                    }
-    
-                    return $visitor;
-                } else {
-                    return null;
+                // Sanitize input
+                $cleanedUuid = $inputFilter->clean($uuid, 'STRING');
+
+                // Prepare the visitor query
+                $query = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__analytics_visitors'))
+                    ->where($db->quoteName('uuid') . ' = ' . $db->quote($cleanedUuid));
+
+                // Execute the visitor query
+                $db->setQuery($query);
+                $visitorResult = $db->loadObject();
+
+                if (!$visitorResult) {
+                    return null; // No visitor found
                 }
+
+                // Prepare the flows query
+                $flowsQuery = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_flows'))
+                ->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($cleanedUuid))
+                ->order('id');
+
+                // Execute the flows query
+                $db->setQuery($flowsQuery);
+                $flowsResult = $db->loadObjectList();
+    
+                // Create the visitor object
+                $visitor = (object)[
+                    'fingerprint' => $visitorResult->fingerprint,
+                    'uuid' => $visitorResult->uuid,
+                    'ip' => $visitorResult->ip,
+                    'user_agent' => $visitorResult->user_agent,
+                    'device' => $visitorResult->device,
+                    'browser_name' => $visitorResult->browser_name,
+                    'browser_version' => $visitorResult->browser_version,
+                    'domain' => $visitorResult->domain,
+                    'lang' => $visitorResult->lang,
+                    'visitor_flows' => null,
+                    'geo' => null,
+                    'visitor_consents' => [], // Assuming consents will be added later
+                ];
+    
+                 // Add geo information if available
+                if ($visitorResult->geo_created_at) {
+                    $visitor->geo = (object)[
+                        'country' => (object)[
+                            'name' => $visitorResult->country_name,
+                            'code' => $visitorResult->country_code,
+                        ],
+                        'city' => $visitorResult->city,
+                        'region' => $visitorResult->region,
+                        'isp' => $visitorResult->isp,
+                        'created_at' => $visitorResult->geo_created_at,
+                    ];
+                }
+    
+                // Add visitor flows if available
+                if (!empty($flowsResult)) {
+                    $visitor->visitor_flows = array_map(function($flow) {
+                        return (object)[
+                            'uuid' => $flow->uuid,
+                            'start' => $flow->start,
+                            'end' => $flow->end,
+                            'multiple_events' => $flow->multiple_events,
+                        ];
+                    }, $flowsResult);
+                }
+
+                return $visitor;
             } catch (Exception $e) {
-                error_log("Query error: " . $e->getMessage());
-                return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+                // Log the error and return null
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage('There was a problem with the database query.', 'error');
+                return null;
             }
         }
 
-        function aesirx_analytics_find_event_by_uuid($event_uuid, $visitor_uuid = null) {
-            global $wpdb;
+        function aesirx_analytics_find_event_by_uuid($eventUuid, $visitorUuid = null) {
+            try {
+                // Get Joomla database object and input filter
+                $db = Factory::getDbo();
+                $inputFilter = InputFilter::getInstance();
         
-            // Add condition for visitor_uuid if provided
-            if ($visitor_uuid !== null) {
-                // Prepare and execute the query
-                // doing direct database calls to custom tables
-                $event = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare("SELECT * FROM {$wpdb->prefix}analytics_events WHERE uuid = %s AND visitor_uuid = %s",
-                    $event_uuid, $visitor_uuid)
-                );
-            } else {
-                // Prepare and execute the query
-                // doing direct database calls to custom tables
-                $event = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare("SELECT * FROM {$wpdb->prefix}analytics_events WHERE uuid = %s", $event_uuid)
-                );
-            }
+                // Sanitize input
+                $cleanedEventUuid = $inputFilter->clean($eventUuid, 'STRING');
+                $cleanedVisitorUuid = $visitorUuid ? $inputFilter->clean($visitorUuid, 'STRING') : null;
+
+                // Prepare the query to find the event by UUID
+                $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_events'))
+                ->where($db->quoteName('uuid') . ' = ' . $db->quote($cleanedEventUuid));
+
+                // Add condition for visitor_uuid if provided
+                if ($cleanedVisitorUuid !== null) {
+                    $query->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($cleanedVisitorUuid));
+                }
+
+                 // Execute the query
+                $db->setQuery($query);
+                $event = $db->loadObject();
+
+                if (!$event) {
+                    return null; // No event found
+                }
+
+                // Prepare the query for event attributes
+                $attributesQuery = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_event_attributes'))
+                ->where($db->quoteName('event_uuid') . ' = ' . $db->quote($cleanedEventUuid));
+
+                // Execute the query for event attributes
+                $db->setQuery($attributesQuery);
+                $attributes = $db->loadObjectList();
+
+                // Construct the VisitorEventRaw object
+                $visitorEventRaw = (object) [
+                    'uuid' => $event->uuid,
+                    'visitor_uuid' => $event->visitor_uuid,
+                    'flow_uuid' => $event->flow_uuid,
+                    'url' => $event->url,
+                    'referer' => $event->referer,
+                    'start' => $event->start,
+                    'end' => $event->end,
+                    'event_name' => $event->event_name,
+                    'event_type' => $event->event_type,
+                    'attributes' => []
+                ];
+
+                // Convert attributes if available
+                if (!empty($attributes)) {
+                    foreach ($attributes as $attr) {
+                        $visitorEventRaw->attributes[] = (object)[
+                            'name' => $attr->name,
+                            'value' => $attr->value
+                        ];
+                    }
+                }
         
-            if ($event === null) {
+                return $visitorEventRaw;
+            } catch (Exception $e) {
+                // Log the error
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                Factory::getApplication()->enqueueMessage('There was a problem with the database query.', 'error');
                 return null;
             }
-        
-            // Query for event attributes
-            // doing direct database calls to custom tables
-            $attributes = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}analytics_event_attributes WHERE event_uuid = %s",
-                    $event_uuid
-                )    
-            );
-        
-            // Construct the VisitorEventRaw object
-            $visitor_event_raw = (object) [
-                'uuid' => $event->uuid,
-                'visitor_uuid' => $event->visitor_uuid,
-                'flow_uuid' => $event->flow_uuid,
-                'url' => $event->url,
-                'referer' => $event->referer,
-                'start' => $event->start,
-                'end' => $event->end,
-                'event_name' => $event->event_name,
-                'event_type' => $event->event_type,
-                'attributes' => []
-            ];
-        
-            // Convert attributes
-            if (!empty($attributes)) {
-                foreach ($attributes as $attr) {
-                    $visitor_event_raw->attributes[] = (object) [
-                        'name' => $attr->name,
-                        'value' => $attr->value
-                    ];
-                }
-            }
-        
-            return $visitor_event_raw;
         }
     
         function aesirx_analytics_list_consent_common($consents, $visitors, $flows) {
@@ -1182,141 +1337,214 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         }
 
         function aesirx_analytics_get_ip_list_without_geo($params = []) {
-            global $wpdb;
+            try {
 
-            $allowed = [];
-            $bind = [];
+                $allowed = [];
+                $bind = [];
+                // Get the Joomla database object
+                $db = Factory::getDbo();
+        
+                // Prepare the query to select distinct IPs where geo data is missing
+                $query = $db->getQuery(true)
+                    ->select('DISTINCT ip')
+                    ->from($db->quoteName('#__analytics_visitors'))
+                    ->where($db->quoteName('geo_created_at') . ' IS NULL');
+        
+                // Prepare the query to count the total number of distinct IPs
+                $countQuery = $db->getQuery(true)
+                    ->select('COUNT(DISTINCT ip) as total')
+                    ->from($db->quoteName('#__analytics_visitors'))
+                    ->where($db->quoteName('geo_created_at') . ' IS NULL');
+        
+                // Converting queries to strings for external function call
+                $sql = $query->__toString();
+                $total_sql = $countQuery->__toString();
 
-            // It is not necessary to prepare a query which doesn't use variable replacement.
-            $sql       = "SELECT distinct ip FROM {$wpdb->prefix}analytics_visitors WHERE geo_created_at IS NULL";
-            $total_sql = "SELECT count(distinct ip) as total FROM {$wpdb->prefix}analytics_visitors WHERE geo_created_at IS NULL";
-            
-            $list_response = self::aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind);
-            
-            if (is_wp_error($list_response)) {
-                return $list_response;
+                // Assuming aesirx_analytics_get_list is a custom function for handling list response
+                $list_response = aesirx_analytics_get_list($sql, $total_sql, $params, $allowed = [], $bind = []);
+
+                // Check if list_respons is false or returns an error and return
+                if ($list_response === false || (is_array($list_response) && isset($list_response['error']))) {
+                    return $list_response; // Return the error or false response
+                }
+
+                // Continue processing the response and extract IPs
+                $list = $list_response['collection'];
+                $ips = [];
+
+                foreach ($list as $one) {
+                    $ips[] = $one['ip'];
+                }
+
+                // Return the processed list of IPs
+                return $ips;
+            } catch (Exception $e) {
+                    // Log any errors
+                    Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                    Factory::getApplication()->enqueueMessage('There was a problem with the database query.', 'error');
+                    return false;
             }
-            
-            $list = $list_response['collection'];
-    
-            $ips = [];
-            
-            foreach ($list as $one) {
-                $ips[] = $one['ip'];
-            }
-    
-            return $ips;
         }
 
         function aesirx_analytics_update_null_geo_per_ip($ip, $geo) {
-            global $wpdb;
+            try {
+                $db = Factory::getDbo();
+                $inputFilter = InputFilter::getInstance();
 
-            $data = array(
-                'isp'           => sanitize_text_field($geo['isp']),
-                'country_code'  => sanitize_text_field($geo['country']['code']),
-                'country_name'  => sanitize_text_field($geo['country']['name']),
-                'city'          => sanitize_text_field($geo['city']),
-                'region'        => sanitize_text_field($geo['region']),
-                'geo_created_at'=> gmdate('Y-m-d H:i:s', strtotime($geo['created_at'])),
-            );
-            
-            $where = array(
-                'geo_created_at' => null,
-                'ip'             => sanitize_text_field($ip),
-            );
-            
-            // Execute the update
-            // doing direct database calls to custom tables
-            $result = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prefix . 'analytics_visitors',
-                $data,
-                $where,
-                array('%s', '%s', '%s', '%s', '%s', '%s'), // Data types for values in $data
-                array('%s', '%s') // Data types for values in $where
-            );
+                $sanitizedData = array(
+                    'isp'           => $inputFilter->clean($geo['isp'], 'STRING'),
+                    'country_code'  => $inputFilter->clean($geo['country']['code'], 'STRING'),
+                    'country_name'  => $inputFilter->clean($geo['country']['name'], 'STRING'),
+                    'city'          => $inputFilter->clean($geo['city'], 'STRING'),
+                    'region'        => $inputFilter->clean($geo['region'], 'STRING'),
+                    'geo_created_at'=> gmdate('Y-m-d H:i:s', strtotime($geo['created_at'])),
+                );
+
+                // Sanitize the IP using InputFilter
+                $sanitizedIp = $filter->clean($ip, 'STRING');
+
+                // Prepare the update query
+                $query = $db->getQuery(true)
+                ->update($db->quoteName('#__analytics_visitors')) // Use Joomla table with automatic prefixing
+                ->set($db->quoteName('isp') . ' = ' . $db->quote($sanitizedData['isp']))
+                ->set($db->quoteName('country_code') . ' = ' . $db->quote($sanitizedData['country_code']))
+                ->set($db->quoteName('country_name') . ' = ' . $db->quote($sanitizedData['country_name']))
+                ->set($db->quoteName('city') . ' = ' . $db->quote($sanitizedData['city']))
+                ->set($db->quoteName('region') . ' = ' . $db->quote($sanitizedData['region']))
+                ->set($db->quoteName('geo_created_at') . ' = ' . $db->quote($sanitizedData['geo_created_at']))
+                ->where($db->quoteName('geo_created_at') . ' IS NULL')
+                ->where($db->quoteName('ip') . ' = ' . $db->quote($sanitizedIp));
+                
+                // Execute the query
+                $db->setQuery($query);
+                $result = $db->execute();
+
+                // Return the result
+                return $result;
+            } catch (Exception $e) {
+                Log::add('Error updating geo data for IP: ' . $sanitizedIp . ' - ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                return false;
+            }
         }
 
         function aesirx_analytics_update_geo_per_uuid($uuid, $geo) {
-            global $wpdb;
+            $db = Factory::getDbo();
+            $inputFilter = InputFilter::getInstance();
+        
+            // Sanitize the input values
+            $uuid = $inputFilter->clean($uuid, 'STRING');
+            $isp = $inputFilter->clean($geo['isp'], 'STRING');
+            $country_code = $inputFilter->clean($geo['country']['code'], 'STRING');
+            $country_name = $inputFilter->clean($geo['country']['name'], 'STRING');
+            $city = $inputFilter->clean($geo['city'], 'STRING');
+            $region = $inputFilter->clean($geo['region'], 'STRING');
+            $geo_created_at = gmdate('Y-m-d H:i:s', strtotime($geo['created_at']));
 
-            $data = array(
-                'isp'           => sanitize_text_field($geo['isp']),
-                'country_code'  => sanitize_text_field($geo['country']['code']),
-                'country_name'  => sanitize_text_field($geo['country']['name']),
-                'city'          => sanitize_text_field($geo['city']),
-                'region'        => sanitize_text_field($geo['region']),
-                'geo_created_at'=> gmdate('Y-m-d H:i:s', strtotime($geo['created_at'])),
-            );
+            // Prepare the update query
+            $query = $db->getQuery(true)
+            ->update($db->quoteName('#__analytics_visitors'))
+            ->set($db->quoteName('isp') . ' = ' . $db->quote($isp))
+            ->set($db->quoteName('country_code') . ' = ' . $db->quote($country_code))
+            ->set($db->quoteName('country_name') . ' = ' . $db->quote($country_name))
+            ->set($db->quoteName('city') . ' = ' . $db->quote($city))
+            ->set($db->quoteName('region') . ' = ' . $db->quote($region))
+            ->set($db->quoteName('geo_created_at') . ' = ' . $db->quote($geo_created_at))
+            ->where($db->quoteName('uuid') . ' = ' . $db->quote($uuid));
             
-            $where = array(
-                'uuid' => sanitize_text_field($uuid),
-            );
-            
-            // Execute the update
-            // doing direct database calls to custom tables
-            $result = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prefix . 'analytics_visitors',
-                $data,
-                $where,
-                array('%s', '%s', '%s', '%s', '%s', '%s'), // Data types for values in $data
-                array('%s') // Data type for the 'uuid' in $where
-            );
+            try {
+                // Execute the query
+                $db->setQuery($query);
+                $db->execute();
+        
+                return true;
+            } catch (Exception $e) {
+                // Log the error and throw an exception
+                Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('PLG_SYSTEM_AESIRX_ANALYTICS_ERROR_UPDATE_GEO_PER_IP'), 500);
+            }
         }
 
         function aesirx_analytics_decode_web3id ($token) {
-            $api_url = 'http://dev01.aesirx.io:8888/check/web3id';
-            $response = wp_remote_get($api_url, array(
+            // Sanitize token
+            $inputFilter = InputFilter::getInstance();
+            $token = $inputFilter->clean($token, 'STRING');
+
+            // API URL
+            $apiUrl = 'http://dev01.aesirx.io:8888/check/web3id';
+
+            // HTTP options for Joomla
+            $options = array(
                 'headers' => array(
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . sanitize_text_field($token),
-                ),
-            ));
+                    'Content-Type'  => 'application/json',
+                    'Authorization' => 'Bearer ' . $token
+                )
+            );
 
-            if (is_wp_error($response)) {
-                $error_message = $response->get_error_message();
-                error_log('API error: ' . $error_message);
-                return new WP_Error('validation_error', esc_html__('Something went wrong', 'aesirx-analytics'));
+            try {
+                // Initialize HTTP client
+                $http = HttpFactory::getHttp();
+                $response = $http->get($apiUrl, $options);
+
+                // If the request was successful
+                if ($response->code === 200) {
+                    $body = json_decode($response->body, true);
+                    return $body;
+                } else {
+                    // Log the error if the status code is not 200
+                    Log::add('API error: Received HTTP ' . $response->code, Log::ERROR, 'aesirx-analytics');
+                    return false;
+                }
+            } catch (Exception $e) {
+                // Log the error and return a meaningful error message
+                Log::add('API request error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
             }
-
-            $body = wp_remote_retrieve_body($response);
-            $data = json_decode($body, true);
-
-            return $data;
         }
 
         function aesirx_analytics_fetch_open_graph_data($url) {
-            $response = wp_remote_get($url);
-        
-            if (is_wp_error($response)) {
-                error_log('Failed to fetch the page: ' . $response->get_error_message());
+            // Initialize HTTP client
+            $http = HttpFactory::getHttp();
+
+            try {
+                // Fetch the page content
+                $response = $http->get($url);
+
+                // Check if the response is valid (HTTP 200 OK)
+                if ($response->code !== 200) {
+                    Log::add('Failed to fetch the page: Received HTTP ' . $response->code, Log::ERROR, 'aesirx-analytics');
+                    return null;
+                }
+
+                // Get the body of the response
+                $html = $response->body;
+
+                // Check if the HTML content is empty
+                if (empty($html)) {
+                    Log::add('Empty response body for URL: ' . $url, Log::ERROR, 'aesirx-analytics');
+                    return null;
+                }
+
+                // Parse Open Graph data using DOMDocument
+                $og_data = [];
+                $dom = new \DOMDocument();
+                @$dom->loadHTML($html);
+                $xpath = new \DOMXPath($dom);
+
+                // Extract Open Graph meta tags
+                foreach ($xpath->query('//meta[@property]') as $meta) {
+                    $property = $meta->getAttribute('property');
+                    $content = $meta->getAttribute('content');
+                    if (strpos($property, 'og:') === 0) {
+                        $og_data[$property] = $content;
+                    }
+                }
+
+                return $og_data;
+            } catch (Exception $e) {
+                // Log error and return null
+                Log::add('Failed to fetch the page: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 return null;
             }
-        
-            $html = wp_remote_retrieve_body($response);
-        
-            if (empty($html)) {
-                error_log('Empty response body for URL: ' . $url);
-                return null;
-            }
-        
-            require_once ABSPATH . WPINC . '/class-simplepie.php';
-            $parser = new \SimplePie();
-            $parser->set_raw_data($html);
-            $parser->init();
-        
-            $og_data = [];
-        
-            if ($title = $parser->get_title()) {
-                $og_data['og:title'] = $title;
-            }
-            if ($description = $parser->get_description()) {
-                $og_data['og:description'] = $description;
-            }
-            if ($image = $parser->get_image_url()) {
-                $og_data['og:image'] = $image;
-            }
-        
-            return $og_data;
         }
     }
 }
