@@ -212,7 +212,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$callCommand = function (array $command): string {
 			try
 			{
-				$process = $this->cli->processAnalytics($command);
+				$data = $this->cli->processAnalytics($command);
 			}
 			catch (Throwable $e)
 			{
@@ -242,7 +242,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				header('Content-Type: application/json; charset=utf-8');
 			}
 
-			return $process->getOutput();
+			return $data;
 		};
 
 		try
@@ -315,7 +315,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$storage = $params->get('1st_party_server', 'internal');
 		$res     = (!empty($storage)
 			&& (
-				($storage == 'internal' && !empty($params->get('license')) && $this->cli->analyticsCliExists())
+				($storage == 'internal')
 				|| ($storage == 'external' && !empty($params->get('domain')))
 			));
 
@@ -334,8 +334,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 
 		if ($app->getName() != 'administrator'
 			|| $app->input->getString('option') != 'com_aesirx_analytics'
-			|| $this->analyticsConfigIsOk()
-			|| $app->input->getString('task') == 'display.download_cli')
+			|| $this->analyticsConfigIsOk())
 		{
 			return;
 		}

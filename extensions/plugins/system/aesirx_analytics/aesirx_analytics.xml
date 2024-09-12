@@ -22,4 +22,5 @@
 		<folder>image</folder>
 		<file>assets-manifest.json</file>
 	</media>
+	<scriptfile>plg_script.php</scriptfile>
 </extension>

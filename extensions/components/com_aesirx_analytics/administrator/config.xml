@@ -12,10 +12,6 @@
 			<option value="internal">COM_AESIRX_ANALYTICS_CONFIGURATION_INTERNAL</option>
 			<option value="external">COM_AESIRX_ANALYTICS_CONFIGURATION_EXTERNAL</option>
 		</field>
-		<field name="download_cli"
-			   type="DownloadCli"
-			   showon="1st_party_server:internal"
-			   label="COM_AESIRX_ANALYTICS_CONFIGURATION_DOWNLOAD_CLI_LABEL" />
 		<field name="license"
 			   type="text"
 			   showon="1st_party_server:internal"
