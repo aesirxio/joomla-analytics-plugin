@@ -1,6 +1,10 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Filter\InputFilter;
+use Joomla\Utilities\Uuid;
 
 Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
 {
@@ -9,50 +13,46 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
         // Decode signature
         $decoded = base64_decode($params['request']['signature'], true);
         if ($decoded === false) {
-            return new WP_Error('validation_error', esc_html__('Invalid signature', 'aesirx-analytics'));
+            throw new Exception(Text::_('Invalid signature'), 400);
         }
 
         // Find visitor by UUID
         $visitor = parent::aesirx_analytics_find_visitor_by_uuid($params['visitor_uuid']);
-
-        if (!$visitor || is_wp_error($visitor)) {
-            return new WP_Error('validation_error', esc_html__('Visitor not found', 'aesirx-analytics'));
+        if (!$visitor || $visitor instanceof Exception) {
+            throw new Exception(Text::_('Visitor not found'), 400);
         }
 
         // Find wallet by network and wallet address
         $wallet = parent::aesirx_analytics_find_wallet($params['network'], $params['wallet']);
-        
-        if (!$wallet || is_wp_error($wallet)) {
-            return new WP_Error('validation_error', esc_html__('Wallet not found', 'aesirx-analytics'));
+        if (!$wallet || $wallet instanceof Exception) {
+            throw new Exception(Text::_('Wallet not found'), 400);
         }
 
         // Extract nonce from wallet
         $nonce = $wallet->nonce;
         if (!$nonce) {
-            return new WP_Error('validation_error', esc_html__('Wallet nonce not found', 'aesirx-analytics'));
+            throw new Exception(Text::_('Wallet nonce not found'), 400);
         }
 
         // Validate network using extracted details
         $validate_nonce = parent::aesirx_analytics_validate_string($nonce, $params['wallet'], $params['request']['signature']);
-
-        if (!$validate_nonce || is_wp_error($validate_nonce)) {
-            return new WP_Error('validation_error', esc_html__('Nonce is not valid', 'aesirx-analytics'));
+        if (!$validate_nonce || $validate_nonce instanceof Exception) {
+            throw new Exception(Text::_('Nonce is not valid'), 400);
         }
 
         $web3id = null;
 
-        if ($params['token']) {
+        if (!empty($params['token'])) {
+            // Validate cocntract by token
             $validate_contract = parent::aesirx_analytics_validate_contract($params['token']);
-
-            if (!$validate_contract || is_wp_error($validate_contract)) {
-                return new WP_Error('validation_error', esc_html__('Contract is not valid', 'aesirx-analytics'));
+            if (!$validate_contract || $validate_contract instanceof Exception) {
+                throw new Exception(Text::_('Contract is not valid'), 400);
             }
 
             // Extract web3id from jwt_payload
             $web3idObj = parent::aesirx_analytics_decode_web3id($params['token']) ?? '';
-
             if (!$web3idObj || !isset($web3idObj['web3id'])) {
-                return new WP_Error('validation_error', esc_html__('Invalid token', 'aesirx-analytics'));
+                throw new Exception(Text::_('Invalid token'), 400);
             }
 
             $web3id = $web3idObj['web3id'];
@@ -67,8 +67,8 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             null
         );
 
-        if (is_wp_error($consent_list)) {
-            return $consent_list;
+        if ($consent_list instanceof Exception) {
+            throw $consent_list;
         }
 
         if ($consent_list) {
@@ -77,11 +77,10 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
                 if (in_array($params['visitor_uuid'], array_column($one_consent->visitor, 'uuid'))) {
                     foreach ($params['consents'] as $consent) {
                         if ((int)$consent === $one_consent->consent) {
-                            return new WP_Error('rejected', esc_html__("Previous consent still active", 'aesirx-analytics'));
+                            throw new \Exception(Text::_('Previous consent still active'), 400);
                         }
                     }
                 }
-
                 // Insert found consents into the map
                 $found_consent[$one_consent->consent] = $one_consent->uuid;
             }
@@ -92,12 +91,12 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             // Determine UUID for consent
             $uuid = $found_consent[(int)$consent] ?? null;
             if (!$uuid) {
-                $uuid = wp_generate_uuid4();
-                parent::aesirx_analytics_add_consent($uuid, (int)$consent, gmdate('Y-m-d H:i:s'), $web3id, $wallet->uuid);
+                $uuid = Uuid::v4();
+                parent::aesirx_analytics_add_consent($uuid, (int)$consent, Factory::getDate()->toSql(), $web3id, $wallet->uuid);
             }
 
             // Add visitor consent record
-            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, gmdate('Y-m-d H:i:s'));
+            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, Factory::getDate()->toSql());
         }
 
         // Update nonce
@@ -107,65 +106,71 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
     }
 
     function aesirx_analytics_list_consent_level3_or_level4($web3id, $wallet, $domain, $expired) {
-        global $wpdb;
+        // Get the database object
+        $db = Factory::getDbo();
+        $inputFilter = InputFilter::getInstance();
 
-        $web3id = sanitize_text_field($web3id);
-        $wallet = sanitize_text_field($wallet);
-        $domain = sanitize_text_field($domain);
+        $web3id = $inputFilter->clean($web3id, 'STRING');
+        $wallet = $inputFilter->clean($wallet, 'STRING');
+        $domain = $inputFilter->clean($domain, 'STRING');
 
         // Prepare SQL conditions based on input parameters
-        $domain_condition = $domain ? $wpdb->prepare(" AND visitor.domain = %s", $domain) : "";
-        $expired_condition = !$expired ? "AND consent.expiration IS NULL" : "";
-        $web3id_condition = $web3id ? $wpdb->prepare(" AND consent.web3id = %s", $web3id) : "AND consent.web3id IS NULL";
+        $domain_condition = $domain ? $db->quoteName('visitor.domain') . ' = ' . $db->quote($domain) : "";
+        $expired_condition = !$expired ? $db->quoteName('consent.expiration') . ' IS NULL' : "";
+        $web3id_condition = $web3id ? $db->quoteName('consent.web3id') . ' = ' . $db->quote($web3id) : "AND consent.web3id IS NULL";
 
         try {
+            // Create a new query object
+            $query = $db->getQuery(true);
 
-            // doing direct database calls to custom tables
-            $consents = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT consent.*, wallet.address 
-                    FROM $wpdb->prefix . 'analytics_consent' AS consent
-                    LEFT JOIN {$wpdb->prefix}analytics_wallet AS wallet ON wallet.uuid = consent.wallet_uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_visitor_consent AS visitor_consent ON consent.uuid = visitor_consent.consent_uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_visitors AS visitor ON visitor_consent.visitor_uuid = visitor.uuid
-                    WHERE wallet.address = %s %s %s %s
-                    GROUP BY consent.uuid", 
-                    $wallet, $expired_condition, $web3id_condition, $domain_condition
-                )
-            );
+            // Fetch consents
+            $query->select('consent.*, wallet.address')
+                ->from($db->quoteName('#__analytics_consent', 'consent'))
+                ->leftJoin($db->quoteName('#__analytics_wallet', 'wallet') . ' ON wallet.uuid = consent.wallet_uuid')
+                ->leftJoin($db->quoteName('#__analytics_visitor_consent', 'visitor_consent') . ' ON consent.uuid = visitor_consent.consent_uuid')
+                ->leftJoin($db->quoteName('#__analytics_visitors', 'visitor') . ' ON visitor_consent.visitor_uuid = visitor.uuid')
+                ->where($db->quoteName('wallet.address') . ' = ' . $db->quote($wallet))
+                ->where($expired_condition)
+                ->where($web3id_condition)
+                ->where($domain_condition)
+                ->group($db->quoteName('consent.uuid'));
 
-            // doing direct database calls to custom tables
-            $visitors = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT visitor.*, visitor_consent.consent_uuid
-                    FROM $wpdb->prefix . 'analytics_visitors' AS visitor
-                    LEFT JOIN {$wpdb->prefix}analytics_visitor_consent AS visitor_consent ON visitor_consent.visitor_uuid = visitor.uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_consent AS consent ON consent.uuid = visitor_consent.consent_uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_wallet AS wallet ON wallet.uuid = consent.wallet_uuid
-                    WHERE wallet.address = %s %s %s %s",
-                    $wallet, $expired_condition, $web3id_condition, $domain_condition
-                )
-            );
+            $consents = $db->setQuery($query)->loadObjectList();
 
-            // doing direct database calls to custom tables
-            $flows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT flows.*
-                    FROM $wpdb->prefix . 'analytics_flows' AS flows
-                    LEFT JOIN {$wpdb->prefix}analytics_visitors AS visitor ON visitor.uuid = flows.visitor_uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_visitor_consent AS visitor_consent ON visitor_consent.visitor_uuid = visitor.uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_consent AS consent ON consent.uuid = visitor_consent.consent_uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_wallet AS wallet ON wallet.uuid = consent.wallet_uuid
-                    WHERE wallet.address = %s %s %s %s
-                    ORDER BY flows.id",
-                    $wallet, $expired_condition, $web3id_condition, $domain_condition
-                )
-            );
+            // Fetch visitors
+            $query = $db->getQuery(true);
+            $query->select('visitor.*, visitor_consent.consent_uuid')
+                ->from($db->quoteName('#__analytics_visitors', 'visitor'))
+                ->leftJoin($db->quoteName('#__analytics_visitor_consent', 'visitor_consent') . ' ON visitor_consent.visitor_uuid = visitor.uuid')
+                ->leftJoin($db->quoteName('#__analytics_consent', 'consent') . ' ON consent.uuid = visitor_consent.consent_uuid')
+                ->leftJoin($db->quoteName('#__analytics_wallet', 'wallet') . ' ON wallet.uuid = consent.wallet_uuid')
+                ->where($db->quoteName('wallet.address') . ' = ' . $db->quote($wallet))
+                ->where($expired_condition)
+                ->where($web3id_condition)
+                ->where($domain_condition);
+
+            $visitors = $db->setQuery($query)->loadObjectList();
+
+            // Fetch flows
+            $query = $db->getQuery(true);
+            $query->select('flows.*')
+                ->from($db->quoteName('#__analytics_flows', 'flows'))
+                ->leftJoin($db->quoteName('#__analytics_visitors', 'visitor') . ' ON visitor.uuid = flows.visitor_uuid')
+                ->leftJoin($db->quoteName('#__analytics_visitor_consent', 'visitor_consent') . ' ON visitor_consent.visitor_uuid = visitor.uuid')
+                ->leftJoin($db->quoteName('#__analytics_consent', 'consent') . ' ON consent.uuid = visitor_consent.consent_uuid')
+                ->leftJoin($db->quoteName('#__analytics_wallet', 'wallet') . ' ON wallet.uuid = consent.wallet_uuid')
+                ->where($db->quoteName('wallet.address') . ' = ' . $db->quote($wallet))
+                ->where($expired_condition)
+                ->where($web3id_condition)
+                ->where($domain_condition)
+                ->order('flows.id');
+
+            $flows = $db->setQuery($query)->loadObjectList();
 
             return parent::aesirx_analytics_list_consent_common($consents, $visitors, $flows);
         } catch (Exception $e) {
-            error_log("Query error: " . $e->getMessage());
-            return new WP_Error('db_update_error', esc_html__('There was a problem querying the data in the database.', 'aesirx-analytics'), ['status' => 500]);
+            Factory::getApplication()->enqueueMessage(Text::_('There was a problem querying the data in the database.'), 'error');
+            return new Exception(Text::_('There was a problem querying the data in the database.'), 500);
         }
     }
 }

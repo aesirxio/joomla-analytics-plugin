@@ -1,9 +1,8 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\Query;
 use Joomla\CMS\Filter\InputFilter;
 
 Class AesirX_Analytics_Add_Consent_Level2 extends AesirxAnalyticsMysqlHelper

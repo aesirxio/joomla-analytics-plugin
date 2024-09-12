@@ -1,9 +1,9 @@
 <?php
 
 use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
-use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Filter\InputFilter;
 
 include __DIR__ . '/GetVisitorConsentList.php';
 
