@@ -2,48 +2,55 @@
 
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory;
 
 Class AesirX_Analytics_Get_All_Consents extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
+         // Get Joomla database object
+         $db = Factory::getDbo();
+         $bind = [];
 
-        $where_clause = ["COALESCE(consent.consent, visitor_consent.consent) = %d"];
-        $bind = [1];
+         $where_clause = ["COALESCE(consent.consent, visitor_consent.consent) = 1"];
 
         parent::aesirx_analytics_add_consent_filters($params, $where_clause, $bind);
 
-        $sql =
-            "SELECT 
-            visitor_consent.consent_uuid AS uuid, 
-            consent.web3id, 
-            COALESCE(consent.consent, visitor_consent.consent) AS consent, 
-            COALESCE(consent.datetime, visitor_consent.datetime) AS datetime, 
-            COALESCE(consent.expiration, visitor_consent.expiration) AS expiration, 
-            wallet.uuid AS wallet_uuid, 
-            wallet.address AS address, 
-            wallet.network AS network, 
-            CASE 
-            WHEN visitor_consent.consent_uuid IS NULL THEN 1 
-            WHEN consent.web3id IS NOT NULL AND consent.wallet_uuid IS NOT NULL THEN 4 
-            WHEN consent.web3id IS NULL AND consent.wallet_uuid IS NOT NULL THEN 3 
-            WHEN consent.web3id IS NOT NULL AND consent.wallet_uuid IS NULL THEN 2 
-            ELSE 1 END AS tier 
-            FROM `#__analytics_visitor_consent` AS visitor_consent 
-            LEFT JOIN `#__analytics_visitors` AS visitors ON visitors.uuid = visitor_consent.visitor_uuid 
-            LEFT JOIN `#__analytics_consent` AS consent ON consent.uuid = visitor_consent.consent_uuid 
-            LEFT JOIN #__analytics_wallet AS wallet ON wallet.uuid = consent.wallet_uuid 
-            WHERE " . implode(" AND ", $where_clause);
+        // Building the SELECT query
+        $sql = $db->getQuery(true)
+            ->select([
+                'visitor_consent.consent_uuid AS uuid',
+                'consent.web3id',
+                'COALESCE(consent.consent, visitor_consent.consent) AS consent',
+                'COALESCE(consent.datetime, visitor_consent.datetime) AS datetime',
+                'COALESCE(consent.expiration, visitor_consent.expiration) AS expiration',
+                'wallet.uuid AS wallet_uuid',
+                'wallet.address AS address',
+                'wallet.network AS network',
+                'CASE 
+                    WHEN visitor_consent.consent_uuid IS NULL THEN 1 
+                    WHEN consent.web3id IS NOT NULL AND consent.wallet_uuid IS NOT NULL THEN 4 
+                    WHEN consent.web3id IS NULL AND consent.wallet_uuid IS NOT NULL THEN 3 
+                    WHEN consent.web3id IS NOT NULL AND consent.wallet_uuid IS NULL THEN 2 
+                    ELSE 1 
+                END AS tier',
+            ])
+            ->from($db->quoteName('#__analytics_visitor_consent', 'visitor_consent'))
+            ->leftJoin($db->quoteName('#__analytics_visitors', 'visitors') . ' ON visitors.uuid = visitor_consent.visitor_uuid')
+            ->leftJoin($db->quoteName('#__analytics_consent', 'consent') . ' ON consent.uuid = visitor_consent.consent_uuid')
+            ->leftJoin($db->quoteName('#__analytics_wallet', 'wallet') . ' ON wallet.uuid = consent.wallet_uuid')
+            ->where(implode(' AND ', $where_clause));
 
-        $total_sql =
-            "SELECT COUNT(visitor_consent.uuid) AS total 
-            FROM `#__analytics_visitor_consent` AS visitor_consent 
-            LEFT JOIN `#__analytics_visitors` AS visitors ON visitors.uuid = visitor_consent.visitor_uuid 
-            LEFT JOIN `#__analytics_consent` AS consent ON consent.uuid = visitor_consent.consent_uuid 
-            LEFT JOIN #__analytics_wallet AS wallet ON wallet.uuid = consent.wallet_uuid 
-            WHERE " . implode(" AND ", $where_clause);
+         // Build the total query
+         $total_sql = $db->getQuery(true)
+            ->select('COUNT(visitor_consent.uuid) AS total')
+            ->from($db->quoteName('#__analytics_visitor_consent', 'visitor_consent'))
+            ->leftJoin($db->quoteName('#__analytics_visitors', 'visitors') . ' ON visitors.uuid = visitor_consent.visitor_uuid')
+            ->leftJoin($db->quoteName('#__analytics_consent', 'consent') . ' ON consent.uuid = visitor_consent.consent_uuid')
+            ->leftJoin($db->quoteName('#__analytics_wallet', 'wallet') . ' ON wallet.uuid = consent.wallet_uuid')
+            ->where(implode(' AND ', $where_clause));
 
+        // Adding sorting
         $sort = self::aesirx_analytics_add_sort(
             $params,
             [
@@ -54,16 +61,16 @@ Class AesirX_Analytics_Get_All_Consents extends AesirxAnalyticsMysqlHelper
                 "web3id",
                 "wallet",
             ],
-            "datetime",
+            "datetime"
         );
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(", ", $sort));
         }
 
         $list_response = parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
 
-        if (is_wp_error($list_response)) {
+        if ($list_response instanceof Exception) {
             return $list_response;
         }
 
@@ -86,11 +93,12 @@ Class AesirX_Analytics_Get_All_Consents extends AesirxAnalyticsMysqlHelper
                 'web3id' => $one->web3id,
                 'consent' => $one->consent,
                 'datetime' => $one->datetime,
-                'expiration' => isset($one->expiration) ? $one->expiration : null,
+                'expiration' => $one->expiration ?? null,
                 'wallet' => $wallet,
             ];
         }
 
+        // Returning the collection and pagination details
         return [
             'collection' => $collection,
             'page' => $list_response['page'],
