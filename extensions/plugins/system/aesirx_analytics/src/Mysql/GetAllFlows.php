@@ -1,66 +1,63 @@
 <?php
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
+use Joomla\CMS\Http\HttpFactory;
+use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Http\Response;
 
 Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
+        $db = JFactory::getDbo();
 
         $where_clause = [
-            '#__analytics_visitors.ip != ""',
-            '#__analytics_visitors.user_agent != ""',
-            '#__analytics_visitors.device != ""',
-            '#__analytics_visitors.browser_version != ""',
-            '#__analytics_visitors.browser_name != ""',
-            '#__analytics_visitors.lang != ""',
+            $db->quoteName('#__analytics_visitors.ip') . ' != ""',
+            $db->quoteName('#__analytics_visitors.user_agent') . ' != ""',
+            $db->quoteName('#__analytics_visitors.device') . ' != ""',
+            $db->quoteName('#__analytics_visitors.browser_version') . ' != ""',
+            $db->quoteName('#__analytics_visitors.browser_name') . ' != ""',
+            $db->quoteName('#__analytics_visitors.lang') . ' != ""',
         ];
-        $where_clause_event = [];
         $bind = [];
-        $bind_event = [];
-
         $detail_page = false;
+        
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
-        if ( isset($params['flow_uuid']) && !empty($params['flow_uuid'])) {
-            $where_clause = ["#__analytics_flows.uuid = %s"];
-            $bind = [ sanitize_text_field($params['flow_uuid'])];
+        if (isset($params['flow_uuid']) && !empty($params['flow_uuid'])) {
+            $where_clause = [$db->quoteName('#__analytics_flows.uuid') . ' = ' . $db->quote($inputFilter->clean($params['flow_uuid']))];
             $detail_page = true;
         }
 
         // filters where clause for events
 
-        $total_sql =
-            "SELECT COUNT(DISTINCT #__analytics_flows.uuid) as total
-            from `#__analytics_flows`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_flows.visitor_uuid
-            left join `#__analytics_events` on #__analytics_events.flow_uuid = #__analytics_flows.uuid
-            WHERE " . implode(" AND ", $where_clause);
+        $total_sql = $db->getQuery(true)
+            ->select('COUNT(DISTINCT #__analytics_flows.uuid) as total')
+            ->from($db->quoteName('#__analytics_flows'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_flows.visitor_uuid'))
+            ->leftJoin($db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_events.flow_uuid') . ' = ' . $db->quoteName('#__analytics_flows.uuid'))
+            ->where(implode(' AND ', $where_clause));
 
-        $sql =
-            "SELECT #__analytics_flows.*, ip, user_agent, device, browser_name, browser_name, browser_version, domain, lang, city, isp, country_name, country_code, geo_created_at, #__analytics_visitors.uuid AS visitor_uuid, 
-            COUNT(DISTINCT #__analytics_events.uuid) AS action, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_type = 'conversion' THEN 1 ELSE 0 END) as SIGNED) AS conversion, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_name = 'visit' THEN 1 ELSE 0 END) as SIGNED) AS pageview, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_name != 'visit' THEN 1 ELSE 0 END) as SIGNED) AS event, 
-            MAX(CASE WHEN #__analytics_event_attributes.name = 'sop_id' THEN #__analytics_event_attributes.value ELSE NULL END) AS sop_id, 
-            TIMESTAMPDIFF(SECOND, #__analytics_flows.start, #__analytics_flows.end) AS duration, 
-            #__analytics_events.url AS url, 
-            CAST(
-                SUM(CASE WHEN #__analytics_events.event_name = 'visit' THEN 1 ELSE 0 END) * 2 +
-                SUM(CASE WHEN #__analytics_events.event_name != 'visit' THEN 1 ELSE 0 END) * 5 +
-                SUM(CASE WHEN #__analytics_events.event_type = 'conversion' THEN 1 ELSE 0 END) * 10
-            as FLOAT) AS ux_percent, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_name = 'visit' THEN 1 ELSE 0 END) * 2 as FLOAT) AS visit_actions, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_name != 'visit' THEN 1 ELSE 0 END) * 5 as FLOAT) AS event_actions, 
-            CAST(SUM(CASE WHEN #__analytics_events.event_type = 'conversion' THEN 1 ELSE 0 END) * 10 as FLOAT) AS conversion_actions 
-            from `#__analytics_flows`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_flows.visitor_uuid
-            left join `#__analytics_events` on #__analytics_events.flow_uuid = #__analytics_flows.uuid
-            left join `#__analytics_event_attributes` on #__analytics_events.uuid = #__analytics_event_attributes.event_uuid
-            WHERE " . implode(" AND ", $where_clause) .
-            " GROUP BY #__analytics_flows.uuid";
+        $sql = $db->getQuery(true)
+        ->select([
+            '#__analytics_flows.*', 
+            'ip', 'user_agent', 'device', 'browser_name', 'browser_version', 'domain', 'lang', 'city', 'isp', 'country_name', 'country_code', 'geo_created_at',
+            'COUNT(DISTINCT #__analytics_events.uuid) AS action',
+            'SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) AS conversion',
+            'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) AS pageview',
+            'SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) AS event',
+            'TIMESTAMPDIFF(SECOND, #__analytics_flows.start, #__analytics_flows.end) AS duration',
+            'MAX(CASE WHEN #__analytics_event_attributes.name = "sop_id" THEN #__analytics_event_attributes.value ELSE NULL END) AS sop_id',
+            'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) * 2 + SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) * 5 + SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) * 10 AS ux_percent'
+        ])
+        ->from($db->quoteName('#__analytics_flows'))
+        ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_flows.visitor_uuid'))
+        ->leftJoin($db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_events.flow_uuid') . ' = ' . $db->quoteName('#__analytics_flows.uuid'))
+        ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_events.uuid') . ' = ' . $db->quoteName('#__analytics_event_attributes.event_uuid'))
+        ->where(implode(' AND ', $where_clause))
+        ->group($db->quoteName('#__analytics_flows.uuid'));
 
         $sort = parent::aesirx_analytics_add_sort(
             $params,
@@ -89,12 +86,12 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
         );
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $query->order($db->escape(implode(', ', $sort)));
         }
 
         $list_response = parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
 
-        if (is_wp_error($list_response)) {
+        if ($list_response instanceof Exception) {
             return $list_response;
         }
 
@@ -115,24 +112,28 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
 
                     // doing direct database calls to custom tables
                     // placeholders depends one number of $bind
-                    $events = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}analytics_events WHERE flow_uuid IN (" . implode(', ', array_fill(0, count($bind), '%s')) . ")", 
-                            ...$bind
-                        )
-                    );
+                    $queryEvents = $db->getQuery(true)
+                        ->select('*')
+                        ->from($db->quoteName('#__analytics_events'))
+                        ->where($db->quoteName('flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+
+                    // Set the query and execute it to get events
+                    $db->setQuery($queryEvents);
+                    $events = $db->loadObjectList();
 
                     // doing direct database calls to custom tables
                     // placeholders depends one number of $bind
-                    $attributes = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                        $wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}analytics_event_attributes 
-                            LEFT JOIN {$wpdb->prefix}analytics_events
-                            ON {$wpdb->prefix}analytics_events.uuid = {$wpdb->prefix}analytics_event_attributes.event_uuid 
-                            WHERE {$wpdb->prefix}analytics_events.flow_uuid IN (" . implode(', ', array_fill(0, count($bind), '%s')) . ")",
-                            ...$bind
-                        )
-                    ); 
+                    $queryAttributes = $db->getQuery(true)
+                        ->select('*')
+                        ->from($db->quoteName('#__analytics_event_attributes', 'attr'))
+                        ->join('LEFT', $db->quoteName('#__analytics_events', 'evt') . ' ON ' . $db->quoteName('evt.uuid') . ' = ' . $db->quoteName('attr.event_uuid'))
+                        ->where($db->quoteName('evt.flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+
+                    // Set the query
+                    $db->setQuery($queryAttributes);
+
+                    // Execute the query and get the results
+                    $attributes = $db->loadObjectList();
                     
                     $hash_attributes = [];
 
@@ -169,15 +170,20 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         $second->og_description = $og_description;
                         $second->og_image = $og_image;
 
-                        if (!filter_var($second->url, FILTER_VALIDATE_URL)) {
+                        if (!Uri::isValid($second->url)) {
                             $status_code = 404;
                         } else {
-                            $response = wp_remote_head($second->url);
-
-                            if (is_wp_error($response)) {
+                            // Use Joomla's HTTP client to make the HEAD request
+                            $http = HttpFactory::getHttp();
+                            try {
+                                // Send a HEAD request to check if the URL is valid
+                                $response = $http->head($second->url);
+                        
+                                // Check the status code of the response
+                                $status_code = $response->code;
+                            } catch (RuntimeException $e) {
+                                // If an error occurs, set status code to 500
                                 $status_code = 500;
-                            } else {
-                                $status_code = wp_remote_retrieve_response_code($response);
                             }
                         }
 
@@ -210,34 +216,42 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
 
                     if (!empty($events) && $params[1] == "flow") {
                         if ($events[0]->start == $events[0]->end) {
-                            $consents = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                                $wpdb->prepare(
-                                    "SELECT * FROM {$wpdb->prefix}analytics_visitor_consent WHERE visitor_uuid = %s AND UNIX_TIMESTAMP(datetime) > %d",
-                                    $events[0]->visitor_uuid,
-                                    strtotime($events[0]->start)
-                                )
-                            );
+                            // Prepare the query
+                            $queryConsents = $db->getQuery(true)
+                                ->select('*')
+                                ->from($db->quoteName('#__analytics_visitor_consent'))
+                                ->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($events[0]->visitor_uuid))
+                                ->where('UNIX_TIMESTAMP(' . $db->quoteName('datetime') . ') > ' . strtotime($events[0]->start));
+
+                            // Set the query and execute
+                            $db->setQuery($queryConsents);
+                            $consents = $db->loadObjectList();
                         } else {
-                            $consents = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                                $wpdb->prepare(
-                                    "SELECT * FROM {$wpdb->prefix}analytics_visitor_consent WHERE visitor_uuid = %s AND UNIX_TIMESTAMP(datetime) > %d AND UNIX_TIMESTAMP(datetime) < %d",
-                                    $events[0]->visitor_uuid,
-                                    strtotime($events[0]->start),
-                                    strtotime($events[0]->end)
-                                )
-                            );
+                            // Prepare the query
+                            $queryConsents = $db->getQuery(true)
+                                ->select('*')
+                                ->from($db->quoteName('#__analytics_visitor_consent'))
+                                ->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($events[0]->visitor_uuid))
+                                ->where('UNIX_TIMESTAMP(' . $db->quoteName('datetime') . ') > ' . strtotime($events[0]->start))
+                                ->where('UNIX_TIMESTAMP(' . $db->quoteName('datetime') . ') < ' . strtotime($events[0]->end));
+
+                            // Set the query and execute
+                            $db->setQuery($queryConsents);
+                            $consents = $db->loadObjectList();
                         }
     
                         foreach ($consents as $consent) {
                             $consent_data = $events[0];
     
                             if ($consent->consent_uuid != null) {
-                                $consent_detail = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                                    $wpdb->prepare(
-                                        "SELECT * FROM {$wpdb->prefix}analytics_consent WHERE uuid = %s",
-                                        $consent->consent_uuid
-                                    )
-                                );
+                                // Prepare the query
+                                $queryConsentDetail = $db->getQuery(true)
+                                    ->from($db->quoteName('#__analytics_consent'))
+                                    ->where($db->quoteName('uuid') . ' = ' . $db->quote($consent->consent_uuid));
+
+                                // Set the query and execute
+                                $db->setQuery($queryConsentDetail);
+                                $consent_detail = $db->loadObjectList();
 
                                 if (!isset($consent_detail->consent) || $consent_detail->consent != 1) {
                                     continue;
@@ -252,12 +266,15 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                                         "tier" => 1,
                                     ];
     
-                                    $wallet_detail = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                                        $wpdb->prepare(
-                                            "SELECT * FROM {$wpdb->prefix}analytics_wallet WHERE uuid = %s",
-                                            $consent_detail->wallet_uuid
-                                        )
-                                    );
+                                    // Prepare the query
+                                    $queryWalletDetail = $db->getQuery(true)
+                                        ->select('*')
+                                        ->from($db->quoteName('#__analytics_wallet'))
+                                        ->where($db->quoteName('uuid') . ' = ' . $db->quote($consent_detail->wallet_uuid));
+
+                                    // Set the query and execute
+                                    $db->setQuery($queryWalletDetail);
+                                    $wallet_detail = $db->loadObjectList();
     
                                     if (!empty($wallet_detail)) {
                                         $consent_attibute["wallet"] = $wallet_detail->address;

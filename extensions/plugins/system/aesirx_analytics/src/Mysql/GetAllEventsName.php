@@ -3,14 +3,12 @@
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Filter\InputFilter;
 
 Class AesirX_Analytics_Get_All_Events_Name extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
         $db = Factory::getDbo();
-        $inputFilter = InputFilter::getInstance();
 
         $where_clause = [
             $db->quoteName('#__analytics_events.event_name') . ' = ' . $db->quote('visit'),
