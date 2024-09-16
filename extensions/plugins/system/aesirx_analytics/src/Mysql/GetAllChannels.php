@@ -1,13 +1,14 @@
 <?php
 
-
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory;
 
 Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
+        // Get Joomla database object
+        $db = Factory::getDbo();
         $where_clause = [];
         $bind = [];
 
@@ -24,17 +25,19 @@ Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
                     END
                 ELSE 'direct'
             END as channel",
-            "coalesce(COUNT(DISTINCT (#__analytics_events.visitor_uuid)), 0) as number_of_visitors",
-            "coalesce(COUNT(#__analytics_events.visitor_uuid), 0) as total_number_of_visitors",
-            "COUNT(#__analytics_events.uuid) as number_of_page_views",
+            "COALESCE(COUNT(DISTINCT (#__analytics_events.visitor_uuid)), 0) AS number_of_visitors",
+            "COALESCE(COUNT(#__analytics_events.visitor_uuid), 0) AS total_number_of_visitors",
+            "COUNT(#__analytics_events.uuid) AS number_of_page_views",
             "COUNT(DISTINCT (#__analytics_events.url)) AS number_of_unique_page_views",
-            "coalesce(SUM(TIMESTAMPDIFF(SECOND, #__analytics_events.start, #__analytics_events.end)) / count(distinct #__analytics_visitors.uuid), 0) DIV 1 as average_session_duration",
-            "coalesce((COUNT(#__analytics_events.uuid) / COUNT(DISTINCT (#__analytics_events.flow_uuid))), 0) DIV 1 as average_number_of_pages_per_session",
-            "coalesce((count(DISTINCT CASE WHEN #__analytics_flows.multiple_events = 0 THEN #__analytics_flows.uuid END) * 100) / count(DISTINCT (#__analytics_flows.uuid)), 0) DIV 1 as bounce_rate",
+            "COALESCE(SUM(TIMESTAMPDIFF(SECOND, #__analytics_events.start, #__analytics_events.end)) / COUNT(DISTINCT #__analytics_visitors.uuid), 0) DIV 1 AS average_session_duration",
+            "COALESCE((COUNT(#__analytics_events.uuid) / COUNT(DISTINCT (#__analytics_events.flow_uuid))), 0) DIV 1 AS average_number_of_pages_per_session",
+            "COALESCE((COUNT(DISTINCT CASE WHEN #__analytics_flows.multiple_events = 0 THEN #__analytics_flows.uuid END) * 100) / COUNT(DISTINCT (#__analytics_flows.uuid)), 0) DIV 1 AS bounce_rate",
         ];
 
+        // Add custom filters
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
+        // Acquisition filter
         $acquisition = false;
         foreach ($params['filter'] as $key => $vals) {
             if ($key === "acquisition") {
@@ -47,28 +50,29 @@ Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
         }
 
         if ($acquisition) {
-            $where_clause[] = "#__analytics_flows.multiple_events = %d";
-            $bind[] = 0;
+            $where_clause[] = "#__analytics_flows.multiple_events = 0";
         }
 
-        $sql = "SELECT " . 
-            implode(", ", $select) .
-            " from #__analytics_events
-            left join #__analytics_visitors on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join #__analytics_flows on #__analytics_flows.uuid = #__analytics_events.flow_uuid
-            WHERE " . implode(" AND ", $where_clause) .
-            " GROUP BY channel";
+         // Build SQL query
+         $sql = "SELECT " . 
+         implode(", ", $select) .
+         " FROM #__analytics_events
+         LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
+         LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
+         WHERE " . implode(" AND ", $where_clause) . 
+         " GROUP BY channel";
 
+        // Build the total query
         $total_select = "3 AS total";
-
-        $total_sql =
-            "SELECT " .
-            $total_select .
-            " from #__analytics_events
-            left join #__analytics_visitors on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join #__analytics_flows on #__analytics_flows.uuid = #__analytics_events.flow_uuid
+        $total_sql = 
+            "SELECT " . 
+            $total_select . 
+            " FROM #__analytics_events
+            LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
+            LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
             WHERE " . implode(" AND ", $where_clause);
 
+        // Allowed sorting columns
         $allowed = [
             "number_of_visitors",
             "number_of_page_views",
@@ -78,8 +82,8 @@ Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
             "bounce_rate",
         ];
 
+        // Add sorting
         $sort = self::aesirx_analytics_add_sort($params, $allowed, "channel");
-
         if (!empty($sort)) {
             $sql .= " ORDER BY " . implode(", ", $sort);
         }
