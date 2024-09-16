@@ -2,43 +2,44 @@
 
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory; 
 
 Class AesirX_Analytics_Get_All_Visitors extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
-        $where_clause = [
-            "#__analytics_events.event_name = %s",
-            "#__analytics_events.event_type = %s",
-        ];
+        $db = Factory::getDbo();
 
-        $bind = [
-            'visit',
-            'action'
+        // Initialize where clauses and bind parameters
+        $where_clause = [
+            $db->quoteName('#__analytics_events.event_name') . " = " . $db->quote('visit'),
+            $db->quoteName('#__analytics_events.event_type') . " = " . $db->quote('action')
         ];
+        $bind = [];
 
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
-        $sql = "SELECT
-            DATE_FORMAT(start, '%%Y-%%m-%%d') as date,
-            COUNT(DISTINCT #__analytics_events.visitor_uuid) as visits,
-            COUNT(DISTINCT #__analytics_events.url) as total_page_views
-            from #__analytics_events
-            left join #__analytics_visitors on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            WHERE " . implode(" AND ", $where_clause) .
-            " GROUP BY date";
+        $sql = $db->getQuery(true)
+            ->select([
+                "DATE_FORMAT(" . $db->quoteName('start') . ", '%Y-%m-%d') AS date",
+                "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS visits",
+                "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.url') . ") AS total_page_views"
+            ])
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->where(implode(' AND ', $where_clause))
+            ->group($db->quoteName('date'));
 
-        $total_sql = "SELECT
-            COUNT(DISTINCT DATE_FORMAT(start, '%%Y-%%m-%%d')) as total
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            WHERE " . implode(" AND ", $where_clause);
+        $total_sql = $db->getQuery(true)
+            ->select("COUNT(DISTINCT DATE_FORMAT(" . $db->quoteName('start') . ", '%Y-%m-%d')) AS total")
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->where(implode(' AND ', $where_clause));
 
         $sort = self::aesirx_analytics_add_sort($params, ["date", "visits", "total_page_views"], "date");
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(', ', $sort));
         }
 
         return parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
