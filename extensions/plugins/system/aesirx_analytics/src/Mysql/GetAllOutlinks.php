@@ -2,16 +2,18 @@
 
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory; 
 
 Class AesirX_Analytics_Get_All_Outlinks extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
+        $db = Factory::getDbo();
 
-        $where_clause = ["#__analytics_events.referer LIKE '%//%'"];
+        $where_clause = [$db->quoteName('#__analytics_events.referer') . " LIKE '%//%'"];
         $bind = [];
 
+        // Handle acquisition filter
         $acquisition = false;
         foreach ($params['filter'] as $key => $vals) {
             if ($key === "acquisition") {
@@ -24,32 +26,34 @@ Class AesirX_Analytics_Get_All_Outlinks extends AesirxAnalyticsMysqlHelper
         }
 
         if ($acquisition) {
-            $where_clause[] = "#__analytics_events.referer LIKE '%google.%'";
-            $where_clause[] = "#__analytics_events.referer LIKE '%bing.%'";
-            $where_clause[] = "#__analytics_events.referer LIKE '%yandex.%'";
-            $where_clause[] = "#__analytics_events.referer LIKE '%yahoo.%'";
-            $where_clause[] = "#__analytics_events.referer LIKE '%%duckduckgo.%'";
+            $where_clause[] = $db->quoteName('#__analytics_events.referer') . " LIKE '%google.%'";
+            $where_clause[] = $db->quoteName('#__analytics_events.referer') . " LIKE '%bing.%'";
+            $where_clause[] = $db->quoteName('#__analytics_events.referer') . " LIKE '%yandex.%'";
+            $where_clause[] = $db->quoteName('#__analytics_events.referer') . " LIKE '%yahoo.%'";
+            $where_clause[] = $db->quoteName('#__analytics_events.referer') . " LIKE '%duckduckgo.%'";
         }
 
+        // Call parent method to add more filters if necessary
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
-        $sql =
-            "SELECT
-            SUBSTRING_INDEX(SUBSTRING_INDEX(referer, '://', -1), '/', 1) AS referer,
-            COUNT(#__analytics_events.visitor_uuid) as total_number_of_visitors,
-            COUNT(DISTINCT #__analytics_events.visitor_uuid) as number_of_visitors,
-            COUNT(referer) as total_urls
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            WHERE " . implode(" AND ", $where_clause) .
-            " GROUP BY referer";
+         // Prepare main query
+         $sql = $db->getQuery(true)
+            ->select([
+                "SUBSTRING_INDEX(SUBSTRING_INDEX(" . $db->quoteName('referer') . ", '://', -1), '/', 1) AS referer",
+                "COUNT(" . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS total_number_of_visitors",
+                "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS number_of_visitors",
+                "COUNT(" . $db->quoteName('referer') . ") AS total_urls"
+            ])
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->where(implode(' AND ', $where_clause))
+            ->group($db->quoteName('referer'));
 
-        $total_sql =
-            "SELECT
-            COUNT(DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(referer, '://', -1), '/', 1)) as total
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            WHERE " . implode(" AND ", $where_clause);
+        $total_sql =$db->getQuery(true)
+            ->select("COUNT(DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(" . $db->quoteName('referer') . ", '://', -1), '/', 1)) AS total")
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->where(implode(' AND ', $where_clause));
 
         $sort = self::aesirx_analytics_add_sort(
             $params,
@@ -64,12 +68,12 @@ Class AesirX_Analytics_Get_All_Outlinks extends AesirxAnalyticsMysqlHelper
         );
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(', ', $sort));
         }
 
         $list_response = parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
 
-        if (is_wp_error($list_response)) {
+        if ($list_response instanceof Exception) {
             return $list_response;
         }
 
@@ -79,30 +83,29 @@ Class AesirX_Analytics_Get_All_Outlinks extends AesirxAnalyticsMysqlHelper
 
         if ($list) {
             foreach ($list as $vals) {
-
                 if ($vals['referer'] == null) {
                     continue;
                 }
 
-                // doing direct database calls to custom tables
-                $second = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare(
-                        "SELECT 
-                        {$wpdb->prefix}analytics_events.referer AS url, 
-                        COUNT( {$wpdb->prefix}analytics_events.visitor_uuid) as total_number_of_visitors, 
-                        COUNT( DISTINCT {$wpdb->prefix}analytics_events.visitor_uuid) as number_of_visitors 
-                        from {$wpdb->prefix}analytics_events
-                        left join {$wpdb->prefix}analytics_visitors on {$wpdb->prefix}analytics_visitors.uuid = {$wpdb->prefix}analytics_events.visitor_uuid 
-                        WHERE {$wpdb->prefix}analytics_events.referer LIKE %s
-                        GROUP BY url ",
-                        '%' . $wpdb->esc_like($vals['referer']) . '%'
-                    ),
-                    ARRAY_A
-                );
+                // Second query to get specific URL details
+                $secondQuery = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('referer') . ' AS url',
+                        "COUNT(" . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS total_number_of_visitors",
+                        "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS number_of_visitors"
+                    ])
+                    ->from($db->quoteName('#__analytics_events'))
+                    ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+                    ->where($db->quoteName('referer') . ' LIKE ' . $db->quote('%' . $vals['referer'] . '%'))
+                    ->group($db->quoteName('referer'));
+
+                // Execute second query and get results
+                $db->setQuery($secondQuery);
+                $urls = $db->loadAssocList();
 
                 $collection[] = [
                     "referer" => $vals['referer'],
-                    "urls" => $second,
+                    "urls" => $urls,
                     "total_number_of_visitors" => $vals['total_number_of_visitors'],
                     "number_of_visitors" => $vals['number_of_visitors'],
                     "total_urls" => $vals['total_urls'],
