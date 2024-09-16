@@ -2,50 +2,51 @@
 
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
 
 Class AesirX_Analytics_Get_All_Events_Name extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        global $wpdb;
+        $db = Factory::getDbo();
+        $inputFilter = InputFilter::getInstance();
 
         $where_clause = [
-            "#__analytics_events.event_name = %s",
-            "#__analytics_events.event_type = %s",
-        ];
-
-        $bind = [
-            'visit',
-            'action'
+            $db->quoteName('#__analytics_events.event_name') . ' = ' . $db->quote('visit'),
+            $db->quoteName('#__analytics_events.event_type') . ' = ' . $db->quote('action'),
         ];
 
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
         parent::aesirx_analytics_add_attribute_filters($params, $where_clause, $bind);
 
-        $sql =
-            "SELECT
-            DATE_FORMAT(start, '%%Y-%%m-%%d') as date,
-            #__analytics_events.event_name,
-            #__analytics_events.event_type,
-            COUNT(DISTINCT #__analytics_events.visitor_uuid) as total_visitor
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join `#__analytics_event_attributes` on #__analytics_event_attributes.event_uuid = #__analytics_events.uuid
-            WHERE " . implode(" AND ", $where_clause) .
-            " GROUP BY date, #__analytics_events.event_name, #__analytics_events.event_type";
+        // SQL query to get the events data
+        $sql = $db->getQuery(true)
+            ->select([
+                "DATE_FORMAT(start, '%Y-%m-%d') AS date",
+                $db->quoteName('#__analytics_events.event_name'),
+                $db->quoteName('#__analytics_events.event_type'),
+                "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.visitor_uuid') . ") AS total_visitor"
+            ])
+            ->from($db->quoteName('#__analytics_events'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->where(implode(' AND ', $where_clause))
+            ->group($db->quoteName('date') . ', ' . $db->quoteName('#__analytics_events.event_name') . ', ' . $db->quoteName('#__analytics_events.event_type'));
 
-        $total_sql =
-            "SELECT
-            COUNT(DISTINCT DATE_FORMAT(start, '%%Y-%%m-%%d'), #__analytics_events.event_name, #__analytics_events.event_type) as total
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join `#__analytics_event_attributes` on #__analytics_event_attributes.event_uuid = #__analytics_events.uuid
-            WHERE " . implode(" AND ", $where_clause);
+        // SQL query to get the total number of records
+        $total_sql = $db->getQuery(true)
+            ->select("COUNT(DISTINCT DATE_FORMAT(start, '%Y-%m-%d'), " . $db->quoteName('#__analytics_events.event_name') . ', ' . $db->quoteName('#__analytics_events.event_type') . ") AS total")
+            ->from($db->quoteName('#__analytics_events'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->where(implode(' AND ', $where_clause));
 
-        $sort = self::aesirx_analytics_add_sort($params, ["date", "event_name", "total_visitor", "event_type"], "date");
+         // Add sorting if applicable
+        $sort = parent::aesirx_analytics_add_sort($params, ["date", "event_name", "total_visitor", "event_type"], "date");
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(', ', $sort));
         }
 
         return parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
