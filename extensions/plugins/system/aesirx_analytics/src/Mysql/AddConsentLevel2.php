@@ -54,11 +54,11 @@ Class AesirX_Analytics_Add_Consent_Level2 extends AesirxAnalyticsMysqlHelper
             if (!$uuid) {
                 $uuid = Factory::getUUID();
     
-                $datetime = Factory::getDate()->toSql();
+                $datetime = gmdate('Y-m-d H:i:s');
                 parent::aesirx_analytics_add_consent($uuid, intval($consent), $datetime, $web3id);
             }
     
-            $datetime = Factory::getDate()->toSql();
+            $datetime = gmdate('Y-m-d H:i:s');
             parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, $datetime);
         }
 

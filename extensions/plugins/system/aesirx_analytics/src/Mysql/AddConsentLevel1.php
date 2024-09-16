@@ -38,7 +38,7 @@ Class AesirX_Analytics_Add_Consent_Level1 extends AesirxAnalyticsMysqlHelper
         $consent = $inputFilter->clean($params['consent'], 'int');
 
         // Get the current date and time
-        $now = Factory::getDate()->toSql();
+        $now = gmdate('Y-m-d H:i:s');
 
         // Instantiate the class to get visitor consent list
         $class = new \AesirX_Analytics_Get_Visitor_Consent_List();

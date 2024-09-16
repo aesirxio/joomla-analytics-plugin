@@ -92,11 +92,11 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             $uuid = $found_consent[(int)$consent] ?? null;
             if (!$uuid) {
                 $uuid = Uuid::v4();
-                parent::aesirx_analytics_add_consent($uuid, (int)$consent, Factory::getDate()->toSql(), $web3id, $wallet->uuid);
+                parent::aesirx_analytics_add_consent($uuid, (int)$consent, gmdate('Y-m-d H:i:s'), $web3id, $wallet->uuid);
             }
 
             // Add visitor consent record
-            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, Factory::getDate()->toSql());
+            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, gmdate('Y-m-d H:i:s'));
         }
 
         // Update nonce

@@ -353,7 +353,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $parsed_url = Uri::getInstance($url);
     
             if ($parsed_url === false || empty($parsed_url->getHost())) {
-                Log::add(JText::_('Domain not found'), Log::ERROR, 'aesirx-analytics');
+                Log::add(Text::_('Domain not found'), Log::ERROR, 'aesirx-analytics');
                 return false;
             }
     
