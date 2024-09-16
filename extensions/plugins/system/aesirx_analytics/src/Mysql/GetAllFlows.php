@@ -11,7 +11,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        $db = JFactory::getDbo();
+        $db = Factory::getDbo();
 
         $where_clause = [
             $db->quoteName('#__analytics_visitors.ip') . ' != ""',

@@ -46,7 +46,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 $plugin_params = new Registry($plugin->params);
 
                 if ($plugin_params->get('cache_time', 0) > 0) {
-                    $cache = JFactory::getCache('aesirx_analytics_cache_group', '');
+                    $cache = Factory::getCache('aesirx_analytics_cache_group', '');
                     $key = md5($sql);
         
                     if ($cached_data = $cache->get($key)) {

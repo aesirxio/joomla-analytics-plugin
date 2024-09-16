@@ -1,11 +1,13 @@
 <?php
 namespace AesirxAnalytics\Migrator;
 
+use Joomla\CMS\Factory;
+
 class MigratorMysql {
 
     public static function aesirx_analytics_create_migrator_table_query() {
         // Get the Joomla database object
-        $db = JFactory::getDbo();
+        $db = Factory::getDbo();
     
         // Prepare the SQL query
         $query = "
@@ -25,13 +27,13 @@ class MigratorMysql {
             $db->execute();
         } catch (Exception $e) {
             // Handle any errors
-            JFactory::getApplication()->enqueueMessage('Error creating migrations table: ' . $e->getMessage(), 'error');
+            Factory::getApplication()->enqueueMessage('Error creating migrations table: ' . $e->getMessage(), 'error');
         }
     }
 
     public static function aesirx_analytics_fetch_rows() {
         // Get the Joomla database object
-        $db = JFactory::getDbo();
+        $db = Factory::getDbo();
 
         // Prepare the query to select the 'name' field from the 'analytics_migrations' table
         $query = $db->getQuery(true)
@@ -49,7 +51,7 @@ class MigratorMysql {
 
     public static function aesirx_analytics_add_migration_query($name) {
         // Get the Joomla database object
-        $db = JFactory::getDbo();
+        $db = Factory::getDbo();
     
         // Prepare the insert query
         $query = $db->getQuery(true);
@@ -70,7 +72,7 @@ class MigratorMysql {
             $db->execute();
         } catch (Exception $e) {
             // Handle any errors
-            JFactory::getApplication()->enqueueMessage('Error inserting migration record: ' . $e->getMessage(), 'error');
+            Factory::getApplication()->enqueueMessage('Error inserting migration record: ' . $e->getMessage(), 'error');
         }
     }
 }

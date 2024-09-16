@@ -3,6 +3,7 @@
 defined('_JEXEC') or die;
 
 use Aesirx\System\AesirxAnalytics\Migrator\MigratorMysql;
+use Joomla\CMS\Factory;
 
 /**
  * Script file for the plg_system_aesirx_analytics plugin
@@ -27,7 +28,7 @@ class plgSystemAesirxAnalyticsInstallerScript
      */
     protected function aesirx_analytics_initialize_function()
     {
-        $db = JFactory::getDbo();
+        $db = Factory::getDbo();
 
         // Add migration table
         MigratorMysql::aesirx_analytics_create_migrator_table_query();
