@@ -16,11 +16,11 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
         parent::aesirx_analytics_add_attribute_filters($params, $where_clause, $bind);
 
         foreach ([$params['filter'] ?? null, $params['filter_not'] ?? null] as $filter_array) {
-            $is_not = $filter_array === (isset($params['filter_not']) ? $params['filter_not'] : null);
+            $is_not = $filter_array === ($params['filter_not'] ?? null);
             if (empty($filter_array)) {
                 continue;
             }
-    
+
             foreach ($filter_array as $key => $vals) {
                 $list = is_array($vals) ? $vals : [$vals];
 
@@ -28,7 +28,7 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
                     case 'visitor_uuid':
                     case 'flow_uuid':
                     case 'uuid':
-                        $where_clause[] = '#__analytics_events.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ("' . implode(', ', $list) . '")';
+                        $where_clause[] = $db->quoteName('#__analytics_events.' . $key) . ' ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', array_map([$db, 'quote'], $list)) . ')';
                         break;
                     default:
                         break;
@@ -36,19 +36,21 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
             }
         }
 
-        $total_sql =
-            "SELECT COUNT(DISTINCT #__analytics_events.uuid) as total
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join `#__analytics_event_attributes` on #__analytics_event_attributes.event_uuid = #__analytics_events.uuid
-            WHERE " . implode(" AND ", $where_clause);
+        // SQL for total count
+        $total_sql = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('#__analytics_events.uuid') . ') as total')
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->where(implode(' AND ', $where_clause));
 
-        $sql =
-            "SELECT #__analytics_events.*, #__analytics_visitors.domain
-            from `#__analytics_events`
-            left join `#__analytics_visitors` on #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            left join `#__analytics_event_attributes` on #__analytics_event_attributes.event_uuid = #__analytics_events.uuid
-            WHERE " . implode(" AND ", $where_clause);
+        // Main SQL query
+        $sql = $db->getQuery(true)
+            ->select([$db->quoteName('#__analytics_events.*'), $db->quoteName('#__analytics_visitors.domain')])
+            ->from($db->quoteName('#__analytics_events'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->where(implode(' AND ', $where_clause));
 
         $sort = self::aesirx_analytics_add_sort(
             $params,
@@ -65,12 +67,12 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
         );
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(', ', $sort));
         }
 
         $list_response = parent::aesirx_analytics_get_list($sql, $total_sql, $params, [], $bind);
 
-        if (is_wp_error($list_response)) {
+        if ($list_response instanceof Exception) {
             return $list_response;
         }
 
@@ -83,16 +85,14 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
                 return $e['uuid'];
             }, $list);
             
-            // %s depends one number of $event_attribute_bind
-            // doing direct database calls to custom tables
-            $secondArray = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT * 
-                    FROM {$wpdb->prefix}analytics_event_attributes 
-                    WHERE event_uuid IN (" . implode(', ', array_fill(0, count($event_attribute_bind), '%s')) . ")",
-                    ...$event_attribute_bind
-                )
-            );
+            // Fetching related event attributes
+            $query_event_attributes = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_event_attributes'))
+                ->where($db->quoteName('event_uuid') . ' IN (' . implode(', ', array_map([$db, 'quote'], $event_attribute_bind)) . ')');
+
+            $db->setQuery($query_event_attributes);
+            $secondArray = $db->loadObjectList();
 
             $hash_map = [];
 
@@ -112,6 +112,7 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
 
             $collection = [];
 
+            // Construct the collection
             foreach ($list as $item) {
                 $item = (object) $item;
                 $attributes = [];
