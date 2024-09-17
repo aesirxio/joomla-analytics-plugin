@@ -1,7 +1,7 @@
 <?php
 
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 
 Class AesirX_Analytics_Get_All_Referrers extends AesirxAnalyticsMysqlHelper
 {

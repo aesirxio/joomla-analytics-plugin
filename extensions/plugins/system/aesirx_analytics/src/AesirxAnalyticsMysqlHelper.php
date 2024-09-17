@@ -222,7 +222,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $sort = self::aesirx_analytics_add_sort($params, $allowed, $default);
     
             if (!empty($sort)) {
-                $sql .= " ORDER BY " . implode(", ", $sort);
+                $sql->order(implode(", ", $sort));
             }
     
             // Get the list of results and total count

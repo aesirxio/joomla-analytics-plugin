@@ -1,7 +1,7 @@
 <?php
 
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Filter\InputFilter;
@@ -49,7 +49,7 @@ Class AesirX_Analytics_Get_All_Events extends AesirxAnalyticsMysqlHelper
         $sort = self::aesirx_analytics_add_sort($validated_params, ["date", "unique_visits", "visits"], "date");
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(", ", $sort));
         }
 
         return parent::aesirx_analytics_get_list($sql, $total_sql, $validated_params, [], $bind);

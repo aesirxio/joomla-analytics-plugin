@@ -1,6 +1,6 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 
 Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
@@ -85,7 +85,7 @@ Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
         // Add sorting
         $sort = self::aesirx_analytics_add_sort($params, $allowed, "channel");
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(", ", $sort));
         }
 
         return parent::aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind);

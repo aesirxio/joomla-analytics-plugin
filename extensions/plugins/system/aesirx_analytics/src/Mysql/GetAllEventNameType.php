@@ -1,7 +1,7 @@
 <?php
 
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 
 Class AesirX_Analytics_Get_All_Event_Name_Type extends AesirxAnalyticsMysqlHelper
