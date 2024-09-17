@@ -12,58 +12,55 @@ Class AesirX_Analytics_Get_Live_Visitors_Device extends AesirxAnalyticsMysqlHelp
         unset($params["filter"]["start"]);
         unset($params["filter"]["end"]);
     
+        // Build the SELECT statement
         $select = [
-            "coalesce(COUNT(DISTINCT (#__analytics_events.visitor_uuid)), 0) as number_of_visitors",
-            "coalesce(COUNT(#__analytics_events.visitor_uuid), 0) as total_number_of_visitors",
-            "COUNT(#__analytics_events.uuid) as number_of_page_views",
-            "COUNT(DISTINCT (#__analytics_events.url)) AS number_of_unique_page_views",
-            "coalesce(SUM(TIMESTAMPDIFF(SECOND, #__analytics_events.start, #__analytics_events.end)) / count(distinct #__analytics_visitors.uuid), 0) DIV 1 as average_session_duration",
-            "coalesce((COUNT(#__analytics_events.uuid) / COUNT(DISTINCT (#__analytics_events.flow_uuid))), 0) DIV 1 as average_number_of_pages_per_session",
-            "coalesce((count(DISTINCT CASE WHEN #__analytics_flows.multiple_events = 0 THEN #__analytics_flows.uuid END) * 100) / count(DISTINCT (#__analytics_flows.uuid)), 0) DIV 1 as bounce_rate",
+            "COALESCE(COUNT(DISTINCT " . $db->quoteName('#__analytics_events.visitor_uuid') . "), 0) AS number_of_visitors",
+            "COALESCE(COUNT(" . $db->quoteName('#__analytics_events.visitor_uuid') . "), 0) AS total_number_of_visitors",
+            "COUNT(" . $db->quoteName('#__analytics_events.uuid') . ") AS number_of_page_views",
+            "COUNT(DISTINCT " . $db->quoteName('#__analytics_events.url') . ") AS number_of_unique_page_views",
+            "COALESCE(SUM(TIMESTAMPDIFF(SECOND, " . $db->quoteName('#__analytics_events.start') . ", " . $db->quoteName('#__analytics_events.end') . ")) / COUNT(DISTINCT " . $db->quoteName('#__analytics_visitors.uuid') . "), 0) DIV 1 AS average_session_duration",
+            "COALESCE((COUNT(" . $db->quoteName('#__analytics_events.uuid') . ") / COUNT(DISTINCT " . $db->quoteName('#__analytics_events.flow_uuid') . ")), 0) DIV 1 AS average_number_of_pages_per_session",
+            "COALESCE((COUNT(DISTINCT CASE WHEN " . $db->quoteName('#__analytics_flows.multiple_events') . " = 0 THEN " . $db->quoteName('#__analytics_flows.uuid') . " END) * 100) / COUNT(DISTINCT " . $db->quoteName('#__analytics_flows.uuid') . "), 0) DIV 1 AS bounce_rate"
         ];
 
         $total_select = [];
 
-        $groups = [
-            "#__analytics_visitors.device"
-        ];
+        // Grouping criteria
+        $groups = [$db->quoteName('#__analytics_visitors.device')];
 
         if (!empty($groups)) {
             foreach ($groups as $one_group) {
                 $select[] = $one_group;
             }
-
             $total_select[] = "COUNT(DISTINCT " . implode(', COALESCE(', $groups) . ") AS total";
-        }
-        else {
-            $total_select[] = "COUNT(#__analytics_events.uuid) AS total";
+        } else {
+            $total_select[] = "COUNT(" . $db->quoteName('#__analytics_events.uuid') . ") AS total";
         }
 
+        // Building WHERE clause
         $where_clause = [
-            "#__analytics_events.event_name = %s",
-            "#__analytics_events.event_type = %s",
-            "#__analytics_events.start = #__analytics_events.end",
-            "#__analytics_events.start >= NOW() - INTERVAL 30 MINUTE",
-            "#__analytics_visitors.device != 'bot'"
-        ];
-
-        $bind = [
-            'visit',
-            'action'
+            $db->quoteName('#__analytics_events.event_name') . ' = ' . $db->quote('visit'),
+            $db->quoteName('#__analytics_events.event_type') . ' = ' . $db->quote('action'),
+            $db->quoteName('#__analytics_events.start') . ' = ' . $db->quoteName('#__analytics_events.end'),
+            $db->quoteName('#__analytics_events.start') . ' >= NOW() - INTERVAL 30 MINUTE',
+            $db->quoteName('#__analytics_visitors.device') . " != 'bot'"
         ];
 
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
-        $total_sql = "SELECT " . implode(", ", $total_select) . " FROM #__analytics_events
-                    LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-                    LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
-                    WHERE " . implode(" AND ", $where_clause);
+        // Building total SQL query
+        $total_sql = "SELECT " . implode(", ", $total_select) . " FROM " . $db->quoteName('#__analytics_events') .
+            " LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') .
+            " LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') .
+            " WHERE " . implode(" AND ", $where_clause);
 
-        $sql = "SELECT " . implode(", ", $select) . " FROM #__analytics_events
-                LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-                LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
-                WHERE " . implode(" AND ", $where_clause);
+        // Building main SQL query
+        $sql = "SELECT " . implode(", ", $select) . " FROM " . $db->quoteName('#__analytics_events') .
+            " LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') .
+            " LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') .
+            " WHERE " . implode(" AND ", $where_clause);
 
+        // Add GROUP BY clause if needed
         if (!empty($groups)) {
             $sql .= " GROUP BY " . implode(", ", $groups);
         }
