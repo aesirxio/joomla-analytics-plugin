@@ -2,27 +2,33 @@
 
 use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\Utilities\Uuid;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
 
 Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
         $start = gmdate('Y-m-d H:i:s');
-        $domain = parent::aesirx_analytics_validate_domain($params['request']['url']);
 
-        if (is_wp_error($domain)) {
-            return $domain;
+         // Validate the domain
+        $domain = parent::aesirx_analytics_validate_domain($params['request']['url']);
+        if (!$domain || $domain instanceof Exception) {
+            Factory::getApplication()->enqueueMessage(Text::_('Invalid domain'), 'error');
+            return false;
         }
 
         $visitor = parent::aesirx_analytics_find_visitor_by_fingerprint_and_domain($params['request']['fingerprint'], $domain);
-
-        if (is_wp_error($visitor)) {
-            return $visitor;
+        if (!$visitor || $visitor instanceof Exception) {
+            Factory::getApplication()->enqueueMessage(Text::_('Invalid domain'), 'error');
+            return false;
         }
 
         if (!$visitor) {
+            // Create a new visitor and visitor flow
             $new_visitor_flow = [
-                'uuid' => wp_generate_uuid4(),
+                'uuid' => Uuid::v4(),
                 'start' => $start,
                 'end' => $start,
                 'multiple_events' => false,
@@ -30,7 +36,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
     
             $new_visitor = [
                 'fingerprint' => $params['request']['fingerprint'],
-                'uuid' => wp_generate_uuid4(),
+                'uuid' => Uuid::v4(),
                 'ip' => $params['request']['ip'],
                 'user_agent' => $params['request']['user_agent'],
                 'device' => $params['request']['device'],
@@ -42,7 +48,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
             ];
     
             $new_visitor_event = [
-                'uuid' => wp_generate_uuid4(),
+                'uuid' => Uuid::v4(),
                 'visitor_uuid' => $new_visitor['uuid'],
                 'flow_uuid' => $new_visitor_flow['uuid'],
                 'url' => $params['request']['url'],
@@ -63,18 +69,21 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
                 'flow_uuid' => $new_visitor_event['flow_uuid'],
             ];
         } else {
-            $url = wp_parse_url($params['request']['url']);
+            // Parse the URL and check if the domain matches the visitor's domain
+            $url = Uri::getInstance($params['request']['url']);
             if (!$url || !isset($url['host'])) {
-                return new WP_Error('validation_error', esc_html__('Wrong URL format, domain not found', 'aesirx-analytics'));
+                Factory::getApplication()->enqueueMessage(Text::_('Wrong URL format, domain not found'), 'error');
+                return false;
             }
-    
+
             if ($url['host'] != $visitor['domain']) {
-                return new WP_Error('validation_error', esc_html__('The domain sent in the new URL does not match the domain stored in the visitor document', 'aesirx-analytics'));
+                Factory::getApplication()->enqueueMessage(Text::_('The domain sent in the new URL does not match the domain stored in the visitor document'), 'error');
+                return false;
             }
-    
+
             $create_flow = true;
             $visitor_flow = [
-                'uuid' => wp_generate_uuid4(),
+                'uuid' => Uuid::v4(),
                 'start' => $start,
                 'end' => $start,
                 'multiple_events' => false,
@@ -82,19 +91,16 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
             $is_already_multiple = false;
     
             if ($params['request']['referer']) {
-                $referer = wp_parse_url($params['request']['referer']);
-
+                $referer = Uri::getInstance($params['request']['referer']);
                 if ($referer && $referer['host'] == $url['host'] && $visitor['visitor_flows']) {
-
                     $list = $visitor['visitor_flows'];
-    
                     if (!empty($list)) {
                         $first = $list[0];
                         $max = $first['start'];
                         $visitor_flow['uuid'] = $first['uuid'];
                         $is_already_multiple = $first['multiple_events'];
                         $create_flow = false;
-
+    
                         foreach ($list as $val) {
                             if ($max < $val['start']) {
                                 $max = $val['start'];
@@ -109,8 +115,9 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
                 parent::aesirx_analytics_create_visitor_flow($visitor['uuid'], $visitor_flow);
             }
     
+            // Create a new visitor event
             $visitor_event = [
-                'uuid' => wp_generate_uuid4(),
+                'uuid' => Uuid::v4(),
                 'visitor_uuid' => $visitor['uuid'],
                 'flow_uuid' => $visitor_flow['uuid'],
                 'url' => $params['request']['url'],
