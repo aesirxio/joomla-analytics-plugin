@@ -8,7 +8,7 @@ use Joomla\CMS\Factory;
 /**
  * Script file for the plg_system_aesirx_analytics plugin
  */
-class plgSystemAesirxAnalyticsInstallerScript
+class plgSystemAesirx_AnalyticsInstallerScript
 {
     /**
      * Method to install the plugin
