@@ -1,5 +1,5 @@
 <?php
-namespace AesirxAnalytics\Migrator;
+namespace Aesirx\System\AesirxAnalytics\AesirxAnalytics\Migrator;
 
 use Joomla\CMS\Factory;
 
