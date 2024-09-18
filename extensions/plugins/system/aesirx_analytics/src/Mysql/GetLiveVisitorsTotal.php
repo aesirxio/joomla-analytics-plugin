@@ -9,32 +9,29 @@ Class AesirX_Analytics_Get_Live_Visitors_Total extends AesirxAnalyticsMysqlHelpe
     {
         $db = Factory::getDbo();
 
+         // Define the WHERE clause with conditions
         $where_clause = [
-            "#__analytics_flows.start = #__analytics_flows.end",
-            "#__analytics_flows.start >= NOW() - INTERVAL 30 MINUTE",
-            "#__analytics_visitors.device != 'bot'"
+            $db->quoteName('#__analytics_flows.start') . ' = ' . $db->quoteName('#__analytics_flows.end'),
+            $db->quoteName('#__analytics_flows.start') . ' >= NOW() - INTERVAL 30 MINUTE',
+            $db->quoteName('#__analytics_visitors.device') . ' != ' . $db->quote('bot')
         ];
-        $bind = [];
 
         unset($params["filter"]["start"]);
         unset($params["filter"]["end"]);
 
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
-        $sql =
-            "SELECT COUNT(DISTINCT `#__analytics_flows`.`visitor_uuid`) as total
-            from `#__analytics_flows`
-            left join `#__analytics_visitors` on `#__analytics_visitors`.`uuid` = `#__analytics_flows`.`visitor_uuid`
-            WHERE " . implode(" AND ", $where_clause) . 
-            " GROUP BY `#__analytics_flows`.`visitor_uuid`";
+         // Build the query using Joomla's query builder
+        $query = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('#__analytics_flows.visitor_uuid') . ') AS total')
+            ->from($db->quoteName('#__analytics_flows'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_flows.visitor_uuid'))
+            ->where(implode(' AND ', $where_clause))
+            ->group($db->quoteName('#__analytics_flows.visitor_uuid'));
 
-        $sql = str_replace("#__", $wpdb->prefix, $sql);
-
-        // used placeholders and $wpdb->prepare() in variable $sql
-        // doing direct database calls to custom tables
-        $total = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->prepare($sql, $bind) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        );
+        // Set and execute the query
+        $db->setQuery($query);
+        $total = (int) $db->loadResult(); // Load the result as an integer
         
         return [
             "total" => $total

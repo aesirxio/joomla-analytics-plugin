@@ -10,6 +10,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Registry\Registry;
+use Joomla\Utilities\Uuid;
 
 if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     Class AesirxAnalyticsMysqlHelper
@@ -865,10 +866,11 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null) {
             $db = Factory::getDbo();
             $inputFilter = InputFilter::getInstance();
+            $uuid = Uuid::v4();
 
             // Prepare the data array
             $data = array(
-                'uuid'         => uniqid('', true),
+                'uuid'         => $uuid,
                 'visitor_uuid' => $inputFilter->clean($visitor_uuid, 'STRING')
             );
 
