@@ -22,9 +22,6 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $skip = ($page - 1) * $pageSize;
         
             $sql .= " LIMIT " . $skip . ", " . $pageSize;
-    
-            $sql = str_replace("#__", $db->getPrefix(), $sql);
-            $total_sql = str_replace("#__", $db->getPrefix(), $total_sql);
 
             // Prepare the total elements query
             $total_query = $db->getQuery(true);
@@ -41,7 +38,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $total_pages = ceil($total_elements / $pageSize);
     
             try {
-                // Check if there's caching (replace `get_option` with Joomla equivalent, if needed)
+                // Check if there's caching
                 $plugin = PluginHelper::getPlugin('system', 'aesirx_analytics');
                 $plugin_params = new Registry($plugin->params);
 
@@ -639,26 +636,19 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $inputFilter = InputFilter::getInstance();
     
             // Ensure UUID is properly formatted for the database
-            $uuid_str = (string) $inputFilter->clean($visitor_flow_uuid, 'STRING');
+            $visitor_flow_uuid = (string) $inputFilter->clean($visitor_flow_uuid, 'STRING');
     
             try {
-                // Custom query for JSON manipulation in MySQL
-                $query = "
-                    UPDATE #__visitor
-                    SET visitor_flows = JSON_SET(visitor_flows, 
-                        CONCAT('$[', JSON_UNQUOTE(JSON_SEARCH(visitor_flows, 'one', ?)), '].multiple_events'), true)
-                    WHERE JSON_CONTAINS(visitor_flows, JSON_OBJECT('uuid', ?))
-                ";
+                // Create the update query
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__analytics_flows'))
+                    ->set($db->quoteName('multiple_events') . ' = 1')
+                    ->where($db->quoteName('uuid') . ' = ' . $db->quote($visitor_flow_uuid));
+
+                // Set and execute the query
+                $db->setQuery($query);
         
-                // Prepare and bind the query
-                $db->setQuery($query)
-                   ->bind(1, $uuid_str)
-                   ->bind(2, $uuid_str);
-        
-                // Execute the query
-                $db->execute();
-        
-                return true;  // Success
+                return true;
         
             } catch (Exception $e) {
                 Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
@@ -902,28 +892,68 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 $data['expiration'] = $expiration;
             }
             
-            // Build the insert query
-            $query = $db->getQuery(true);
-            $columns = array_keys($data);
-            $values = array_map(array($db, 'quote'), array_values($data));
-
-            // Insert data into the custom table 'analytics_visitor_consent'
-            $query
-                ->insert($db->quoteName('#__analytics_visitor_consent')) 
-                ->columns($db->quoteName($columns))
-                ->values(implode(',', $values));
-
-            $db->setQuery($query);
-    
-            // Execute the insert
+            // Insert data into the analytics_visitor_consent table
             try {
+                $query = $db->getQuery(true)
+                            ->insert($db->quoteName('#__analytics_visitor_consent'))
+                            ->columns($db->quoteName(array_keys($data)))
+                            ->values(implode(',', array_map([$db, 'quote'], array_values($data))));
+                $db->setQuery($query);
                 $db->execute();
-                return true;
             } catch (Exception $e) {
                 // Log and handle error
                 Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 throw new Exception(Text::_('PLG_SYSTEM_AESIRX_ANALYTICS_ERROR_INSERT_CONSENT'), 500);
             }
+
+            // Fetch the visitor data
+            $visitor_query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__analytics_visitors'))
+                ->where($db->quoteName('uuid') . ' = ' . $db->quote($visitor_uuid));
+            $db->setQuery($visitor_query);
+            $visitor_data = $db->loadObject();
+
+            // Check and update visitor data if needed
+            $updated_data = [];
+
+            if (empty($visitor_data->ip) && isset($params['request']['ip'])) {
+                $updated_data['ip'] = $params['request']['ip'];
+            }
+            if (empty($visitor_data->browser_version)) {
+                $updated_data['browser_version'] = isset($params['request']['browser_version']) ? $params['request']['browser_version'] : '';
+            }
+            if (empty($visitor_data->browser_name)) {
+                $updated_data['browser_name'] = isset($params['request']['browser_name']) ? $params['request']['browser_name'] : '';
+            }
+            if (empty($visitor_data->device)) {
+                $updated_data['device'] = isset($params['request']['device']) ? $params['request']['device'] : '';
+            }
+            if (empty($visitor_data->user_agent)) {
+                $updated_data['user_agent'] = isset($params['request']['user_agent']) ? $params['request']['user_agent'] : '';
+            }
+            if (empty($visitor_data->lang)) {
+                $updated_data['lang'] = isset($params['request']['lang']) ? $params['request']['lang'] : '';
+            }
+
+            // Update the visitor data if there are changes
+            if (!empty($updated_data)) {
+                try {
+                    $query = $db->getQuery(true)
+                                ->update($db->quoteName('#__analytics_visitors'))
+                                ->set(array_map(function ($key, $value) use ($db) {
+                                    return $db->quoteName($key) . ' = ' . $db->quote($value);
+                                }, array_keys($updated_data), $updated_data))
+                                ->where($db->quoteName('uuid') . ' = ' . $db->quote($visitor_uuid));
+                    $db->setQuery($query);
+                    $db->execute();
+                } catch (RuntimeException $e) {
+                    Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+                    return false;
+                }
+            }
+
+            return true;
         }
     
         function aesirx_analytics_group_consents_by_domains($consents) {
@@ -1095,6 +1125,54 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 // Execute the query
                 $db->setQuery($query);
                 $db->execute();
+
+                // Sanitize the consent_uuid
+                $consent_uuid = htmlspecialchars($consent_uuid, ENT_QUOTES, 'UTF-8');
+
+                // Select the visitor data based on the consent_uuid
+                $query = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__analytics_visitor_consent'))
+                    ->where($db->quoteName('consent_uuid') . ' = ' . $db->quote($consent_uuid));
+
+                // Execute the query and load the result
+                $db->setQuery($query);
+                $visitor_data = $db->loadObject();
+
+                // Check if visitor data is found
+                if ($visitor_data) {
+                    // Prepare the data for the update
+                    $updated_data = [
+                        'ip'             => '',
+                        'lang'           => '',
+                        'browser_version' => '',
+                        'browser_name'   => '',
+                        'device'         => '',
+                        'user_agent'     => ''
+                    ];
+
+                    // Perform the update
+                    try {
+                        $query = $db->getQuery(true)
+                                    ->update($db->quoteName('#__analytics_visitors'))
+                                    ->set(array_map(function ($key, $value) use ($db) {
+                                        return $db->quoteName($key) . ' = ' . $db->quote($value);
+                                    }, array_keys($updated_data), $updated_data))
+                                    ->where($db->quoteName('uuid') . ' = ' . $db->quote($visitor_data->visitor_uuid));
+
+                        // Set and execute the query
+                        $db->setQuery($query);
+                        $db->execute();
+                    } catch (Exception $e) {
+                        // Log any errors that occur during the update
+                        Log::add('Error updating analytics visitor data: ' . $e->getMessage(), Log::ERROR, 'jerror');
+                        return false;
+                    }
+                } else {
+                    // Handle case when visitor data is not found
+                    Log::add('Visitor data not found for consent_uuid: ' . $consent_uuid, Log::WARNING, 'jerror');
+                    return false;
+                }
 
                 return true;
             } catch (Exception $e) {

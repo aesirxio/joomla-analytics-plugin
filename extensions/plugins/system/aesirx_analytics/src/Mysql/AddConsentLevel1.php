@@ -65,10 +65,12 @@ Class AesirX_Analytics_Add_Consent_Level1 extends AesirxAnalyticsMysqlHelper
 
         // Add new visitor consent with the given parameters and calculated timestamps
         return parent::aesirx_analytics_add_visitor_consent(
-            $uuid,                            // Visitor UUID
-            null,                            // Consent UUID (null for new consent)
-            $consent,                        // Consent level
-            $now                             // Current timestamp
+            $uuid,          // Visitor UUID
+            null,           // Consent UUID (null for new consent)
+            $consent,       // Consent level
+            $now,           // Current timestamp
+            null,           // Consent expiration (null for no expiration)
+            $params         // Additional parameters
         );
     }
 }

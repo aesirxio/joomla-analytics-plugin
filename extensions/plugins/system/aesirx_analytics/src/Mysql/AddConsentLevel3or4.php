@@ -42,7 +42,7 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
 
         $web3id = null;
 
-        if (!empty($params['token'])) {
+        if (isset($params['token']) && !empty($params['token'])) {
             // Validate cocntract by token
             $validate_contract = parent::aesirx_analytics_validate_contract($params['token']);
             if (!$validate_contract || $validate_contract instanceof Exception) {
@@ -71,7 +71,7 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             throw $consent_list;
         }
 
-        if ($consent_list) {
+        if (isset($consent_list->consents)) {
             foreach ($consent_list->consents as $one_consent) {
                 // Check if consent is part of the current visitor UUID
                 if (in_array($params['visitor_uuid'], array_column($one_consent->visitor, 'uuid'))) {
@@ -96,7 +96,7 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             }
 
             // Add visitor consent record
-            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, gmdate('Y-m-d H:i:s'));
+            parent::aesirx_analytics_add_visitor_consent($params['visitor_uuid'], $uuid, null, gmdate('Y-m-d H:i:s'), null, $params);
         }
 
         // Update nonce

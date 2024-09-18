@@ -30,6 +30,9 @@ class plgSystemAesirx_AnalyticsInstallerScript
     {
         $db = Factory::getDbo();
 
+        // Include the MigratorMysql class file if not autoloaded
+        include_once __DIR__ . '/src/Migrator/MigratorMysql.php';
+
         // Add migration table
         MigratorMysql::aesirx_analytics_create_migrator_table_query();
 
