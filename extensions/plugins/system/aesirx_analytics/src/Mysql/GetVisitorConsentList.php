@@ -2,66 +2,89 @@
 
 use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
 
 Class AesirX_Analytics_Get_Visitor_Consent_List extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
         $db = Factory::getDbo();
+        $inputFilter = InputFilter::getInstance();
 
-        $uuid = sanitize_text_field($params['uuid']);
+        $uuid = $inputFilter->clean($params['uuid'], 'STRING');
 
-        // doing direct database calls to custom tables
-        $visitor = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->prepare("SELECT * FROM {$wpdb->prefix}analytics_visitors WHERE uuid = %s", $uuid)
-        );
+        // Query to get visitor data
+        $visitorQuery = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__analytics_visitors'))
+            ->where($db->quoteName('uuid') . ' = ' . $db->quote($uuid));
 
-        // doing direct database calls to custom tables
-        $flows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->prepare("SELECT * FROM {$wpdb->prefix}analytics_flows WHERE visitor_uuid = %s ORDER BY id", $uuid)
-        );
+        // Execute visitor query
+        $db->setQuery($visitorQuery);
+        $visitor = $db->loadObject();
 
-        $exp = '';
+        // Query to get flow data
+        $flowQuery = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__analytics_flows'))
+            ->where($db->quoteName('visitor_uuid') . ' = ' . $db->quote($uuid))
+            ->order($db->quoteName('id') . ' ASC');
+
+        // Execute flow query
+        $db->setQuery($flowQuery);
+        $flows = $db->loadObjectList();
+
+        $consentQuery = $db->getQuery(true);
 
         // handle expiration
         if (!isset($params['expired']) || is_null($params['expired']) || !$params['expired']) {
-            $exp = $wpdb->prepare(" AND (`vc`.`expiration` >= %s OR `vc`.`expiration` IS NULL)
-                    AND IF (c.uuid IS NULL, true, c.expiration IS NULL)", gmdate('Y-m-d H:i:s'));
+            $consentQuery
+            ->select([
+                'vc.*',
+                'c.web3id',
+                'c.consent AS consent_from_consent',
+                'w.network',
+                'w.address',
+                'c.expiration AS consent_expiration',
+                'c.datetime AS consent_datetime'
+            ])
+            ->from($db->quoteName('#__analytics_visitor_consent', 'vc'))
+            ->leftJoin($db->quoteName('#__analytics_consent', 'c') . ' ON ' . $db->quoteName('vc.consent_uuid') . ' = ' . $db->quoteName('c.uuid'))
+            ->leftJoin($db->quoteName('#__analytics_wallet', 'w') . ' ON ' . $db->quoteName('c.wallet_uuid') . ' = ' . $db->quoteName('w.uuid'))
+            ->where($db->quoteName('vc.visitor_uuid') . ' = ' . $db->quote($uuid))
+            ->where('(' . $db->quoteName('vc.expiration') . ' >= ' . $db->quote(gmdate('Y-m-d H:i:s')) . ' OR ' . $db->quoteName('vc.expiration') . ' IS NULL)')
+            ->where('(' . $db->quoteName('c.uuid') . ' IS NULL OR ' . $db->quoteName('c.expiration') . ' IS NULL)')
+            ->order($db->quoteName('vc.datetime') . ' ASC');
 
-            // doing direct database calls to custom tables
-            $consents = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT vc.*, c.web3id, c.consent AS consent_from_consent, w.network, w.address,
-                    c.expiration as consent_expiration, c.datetime as consent_datetime
-                    FROM {$wpdb->prefix}analytics_visitor_consent AS vc
-                    LEFT JOIN {$wpdb->prefix}analytics_consent AS c ON vc.consent_uuid = c.uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_wallet AS w ON c.wallet_uuid = w.uuid
-                    WHERE vc.visitor_uuid = %s ORDER BY vc.datetime 
-                    AND (`vc`.`expiration` >= %s OR `vc`.`expiration` IS NULL)
-                    AND IF (c.uuid IS NULL, true, c.expiration IS NULL)",
-                    sanitize_text_field($params['uuid']), gmdate('Y-m-d H:i:s')
-                )
-            );
         } else {
-            // doing direct database calls to custom tables
-            $consents = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                $wpdb->prepare(
-                    "SELECT vc.*, c.web3id, c.consent AS consent_from_consent, w.network, w.address,
-                    c.expiration as consent_expiration, c.datetime as consent_datetime
-                    FROM {$wpdb->prefix}analytics_visitor_consent AS vc
-                    LEFT JOIN {$wpdb->prefix}analytics_consent AS c ON vc.consent_uuid = c.uuid
-                    LEFT JOIN {$wpdb->prefix}analytics_wallet AS w ON c.wallet_uuid = w.uuid
-                    WHERE vc.visitor_uuid = %s ORDER BY vc.datetime",
-                    sanitize_text_field($params['uuid'])
-                )
-            );
+            $consentQuery
+            ->select([
+                'vc.*',
+                'c.web3id',
+                'c.consent AS consent_from_consent',
+                'w.network',
+                'w.address',
+                'c.expiration AS consent_expiration',
+                'c.datetime AS consent_datetime'
+            ])
+            ->from($db->quoteName('#__analytics_visitor_consent', 'vc'))
+            ->leftJoin($db->quoteName('#__analytics_consent', 'c') . ' ON ' . $db->quoteName('vc.consent_uuid') . ' = ' . $db->quoteName('c.uuid'))
+            ->leftJoin($db->quoteName('#__analytics_wallet', 'w') . ' ON ' . $db->quoteName('c.wallet_uuid') . ' = ' . $db->quoteName('w.uuid'))
+            ->where($db->quoteName('vc.visitor_uuid') . ' = ' . $db->quote($uuid))
+            ->order($db->quoteName('vc.datetime') . ' ASC');
         }
 
-        if ($wpdb->last_error) {
-            error_log("Query error: " . $wpdb->last_error);
-            return new WP_Error('db_query_error', esc_html__('There was a problem with the database query.', 'aesirx-analytics'), ['status' => 500]);
+        // Execute consent query
+        $db->setQuery($consentQuery);
+        $consents = $db->loadObjectList();
+
+        // Handle query errors
+        if ($db->getErrorNum()) {
+            error_log("Query error: " . $db->getErrorMsg());
+            throw new RuntimeException('Database query error: ' . $db->getErrorMsg());
         }
 
+        // Prepare the result if the visitor exists
         if ($visitor) {
             $res = [
                 'uuid' => $visitor->uuid,
@@ -74,39 +97,42 @@ Class AesirX_Analytics_Get_Visitor_Consent_List extends AesirxAnalyticsMysqlHelp
                 'lang' => $visitor->lang,
                 'visitor_flows' => [],
                 'geo' => null,
-                'visitor_consents' => [],
+                'visitor_consents' => []
             ];
 
+            // Handle geo data if available
             if ($visitor->geo_created_at) {
                 $res['geo'] = [
                     'country' => [
                         'name' => $visitor->country_name,
-                        'code' => $visitor->country_code,
+                        'code' => $visitor->country_code
                     ],
                     'city' => $visitor->city,
                     'isp' => $visitor->isp,
-                    'created_at' => $visitor->geo_created_at,
+                    'created_at' => $visitor->geo_created_at
                 ];
             }
 
+            // Process visitor flows
             foreach ($flows as $flow) {
                 $res['visitor_flows'][] = [
                     'uuid' => $flow->uuid,
-                    'start' =>$flow->start,
+                    'start' => $flow->start,
                     'end' => $flow->end,
-                    'multiple_events' => $flow->multiple_events,
+                    'multiple_events' => $flow->multiple_events
                 ];
             }
 
+            // Process consents
             foreach ($consents as $consent) {
                 $res['visitor_consents'][] = [
                     'consent_uuid' => $consent->consent_uuid,
                     'consent' => $consent->consent_from_consent ?? $consent->consent ?? null,
-                    'datetime' => $consent->consent_datetime ?? $consent->datetime ? $consent->consent_datetime ?? $consent->datetime : null,
-                    'expiration' => $consent->consent_expiration ?? $consent->expiration ? $consent->consent_expiration ?? $consent->expiration : null,
+                    'datetime' => $consent->consent_datetime ?? $consent->datetime,
+                    'expiration' => $consent->consent_expiration ?? $consent->expiration,
                     'address' => $consent->address,
                     'network' => $consent->network,
-                    'web3id' => $consent->web3id,
+                    'web3id' => $consent->web3id
                 ];
             }
 
