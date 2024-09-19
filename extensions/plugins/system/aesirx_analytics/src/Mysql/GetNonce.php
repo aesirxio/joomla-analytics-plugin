@@ -3,7 +3,7 @@
 use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
-use Joomla\Utilities\Uuid;
+use Ramsey\Uuid\Uuid;
 
 Class AesirX_Analytics_Get_Nonce extends AesirxAnalyticsMysqlHelper
 {
@@ -45,7 +45,7 @@ Class AesirX_Analytics_Get_Nonce extends AesirxAnalyticsMysqlHelper
         if ($wallet) {
             parent::aesirx_analytics_update_nonce($params['network'], $params['address'], $num);
         } else {
-            $uuid = Uuid::v4();
+            $uuid = Uuid::uuid4()->toString();
             parent::aesirx_analytics_add_wallet($uuid, $params['network'], $params['address'], $num);
         }
 

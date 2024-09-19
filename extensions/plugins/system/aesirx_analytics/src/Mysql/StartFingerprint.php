@@ -1,7 +1,7 @@
 <?php
 
 use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
-use Joomla\Utilities\Uuid;
+use Ramsey\Uuid\Uuid;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
@@ -20,15 +20,11 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
         }
 
         $visitor = parent::aesirx_analytics_find_visitor_by_fingerprint_and_domain($params['request']['fingerprint'], $domain);
-        if (!$visitor || $visitor instanceof Exception) {
-            Factory::getApplication()->enqueueMessage(Text::_('Invalid domain'), 'error');
-            return false;
-        }
 
         if (!$visitor) {
             // Create a new visitor and visitor flow
             $new_visitor_flow = [
-                'uuid' => Uuid::v4(),
+                'uuid' => Uuid::uuid4()->toString(),
                 'start' => $start,
                 'end' => $start,
                 'multiple_events' => false,
@@ -36,7 +32,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
     
             $new_visitor = [
                 'fingerprint' => $params['request']['fingerprint'],
-                'uuid' => Uuid::v4(),
+                'uuid' => Uuid::uuid4()->toString(),
                 'ip' => $params['request']['ip'],
                 'user_agent' => $params['request']['user_agent'],
                 'device' => $params['request']['device'],
@@ -48,7 +44,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
             ];
     
             $new_visitor_event = [
-                'uuid' => Uuid::v4(),
+                'uuid' => Uuid::uuid4()->toString(),
                 'visitor_uuid' => $new_visitor['uuid'],
                 'flow_uuid' => $new_visitor_flow['uuid'],
                 'url' => $params['request']['url'],
@@ -83,14 +79,14 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
 
             $create_flow = true;
             $visitor_flow = [
-                'uuid' => Uuid::v4(),
+                'uuid' => Uuid::uuid4()->toString(),
                 'start' => $start,
                 'end' => $start,
                 'multiple_events' => false,
             ];
             $is_already_multiple = false;
     
-            if ($params['request']['referer']) {
+            if (isset($params['request']['referer']) && $params['request']['referer']) {
                 $referer = Uri::getInstance($params['request']['referer']);
                 if ($referer && $referer->getHost() == $url->getHost() && $visitor['visitor_flows']) {
                     $list = $visitor['visitor_flows'];
@@ -117,11 +113,11 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
     
             // Create a new visitor event
             $visitor_event = [
-                'uuid' => Uuid::v4(),
+                'uuid' => Uuid::uuid4()->toString(),
                 'visitor_uuid' => $visitor['uuid'],
                 'flow_uuid' => $visitor_flow['uuid'],
                 'url' => $params['request']['url'],
-                'referer' => $params['request']['referer'],
+                'referer' => isset($params['request']['referer']) ? $params['request']['referer'] : '',
                 'start' => $start,
                 'end' => $start,
                 'event_name' => $params['request']['event_name'] ?? 'visit',

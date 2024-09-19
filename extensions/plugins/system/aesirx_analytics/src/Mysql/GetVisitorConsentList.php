@@ -74,14 +74,13 @@ Class AesirX_Analytics_Get_Visitor_Consent_List extends AesirxAnalyticsMysqlHelp
             ->order($db->quoteName('vc.datetime') . ' ASC');
         }
 
-        // Execute consent query
-        $db->setQuery($consentQuery);
-        $consents = $db->loadObjectList();
-
-        // Handle query errors
-        if ($db->getErrorNum()) {
-            error_log("Query error: " . $db->getErrorMsg());
-            throw new RuntimeException('Database query error: ' . $db->getErrorMsg());
+        try {
+            // Execute consent query
+            $db->setQuery($consentQuery);
+            $consents = $db->loadObjectList();
+        } catch (Exception $e) {
+            Log::add('Query error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
+            throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
         }
 
         // Prepare the result if the visitor exists

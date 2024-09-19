@@ -10,7 +10,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Registry\Registry;
-use Joomla\Utilities\Uuid;
+use Ramsey\Uuid\Uuid;
 
 if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     Class AesirxAnalyticsMysqlHelper
@@ -858,7 +858,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null) {
             $db = Factory::getDbo();
             $inputFilter = InputFilter::getInstance();
-            $uuid = Uuid::v4();
+            $uuid = Uuid::uuid4()->toString();
 
             // Prepare the data array
             $data = array(
@@ -1006,9 +1006,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
             $options = array(
-                'headers' => array(
                     'Content-Type' => 'application/json',
-                ),
             );
 
             try {
@@ -1037,9 +1035,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
            // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
             $options = array(
-                'headers' => array(
                     'Content-Type' => 'application/json',
-                ),
             );
 
             try {
@@ -1069,10 +1065,8 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
             $options = array(
-                'headers' => array(
                     'Content-Type' => 'application/json',
                     'Authorization' => 'Bearer ' . $inputFilter->clean($token, 'STRING'),
-                ),
             );
 
             try {
@@ -1546,10 +1540,8 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
 
             // HTTP options for Joomla
             $options = array(
-                'headers' => array(
                     'Content-Type'  => 'application/json',
                     'Authorization' => 'Bearer ' . $token
-                )
             );
 
             try {

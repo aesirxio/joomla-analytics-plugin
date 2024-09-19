@@ -4,7 +4,7 @@ use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Filter\InputFilter;
-use Joomla\Utilities\Uuid;
+use Ramsey\Uuid\Uuid;
 
 Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
 {
@@ -91,7 +91,7 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
             // Determine UUID for consent
             $uuid = $found_consent[(int)$consent] ?? null;
             if (!$uuid) {
-                $uuid = Uuid::v4();
+                $uuid = Uuid::uuid4()->toString();
                 parent::aesirx_analytics_add_consent($uuid, (int)$consent, gmdate('Y-m-d H:i:s'), $web3id, $wallet->uuid);
             }
 

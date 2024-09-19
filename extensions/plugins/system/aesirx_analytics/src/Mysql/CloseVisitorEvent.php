@@ -13,8 +13,6 @@ Class AesirX_Analytics_Close_Visitor_Event extends AesirxAnalyticsMysqlHelper
         $db = Factory::getDbo();
         $inputFilter = InputFilter::getInstance();
 
-        $web3id = $inputFilter->clean($web3id, 'STRING');
-
         // Validate required parameters
         if (!isset($params['request']['event_uuid']) || empty($params['request']['event_uuid'])) {
             throw new Exception(Text::_('The event uuid parameter is required.'), 400);
