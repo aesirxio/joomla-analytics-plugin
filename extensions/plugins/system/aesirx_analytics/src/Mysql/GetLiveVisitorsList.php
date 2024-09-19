@@ -9,8 +9,8 @@ Class AesirX_Analytics_Get_Live_Visitors_List extends AesirxAnalyticsMysqlHelper
     {
         $db = Factory::getDbo();
 
-         // Prepare the WHERE clauses
-         $where_clause = [
+        // Prepare the WHERE clauses
+        $where_clause = [
             $db->quoteName('#__analytics_flows.start') . ' = ' . $db->quoteName('#__analytics_flows.end'),
             $db->quoteName('#__analytics_flows.start') . ' >= NOW() - INTERVAL 30 MINUTE',
             $db->quoteName('#__analytics_visitors.device') . ' != ' . $db->quote('bot')

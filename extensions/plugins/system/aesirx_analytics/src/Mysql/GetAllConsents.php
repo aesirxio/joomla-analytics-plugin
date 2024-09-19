@@ -8,11 +8,11 @@ Class AesirX_Analytics_Get_All_Consents extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-         // Get Joomla database object
-         $db = Factory::getDbo();
-         $bind = [];
+        // Get Joomla database object
+        $db = Factory::getDbo();
+        $bind = [];
 
-         $where_clause = ["COALESCE(consent.consent, visitor_consent.consent) = 1"];
+        $where_clause = ["COALESCE(consent.consent, visitor_consent.consent) = 1"];
 
         parent::aesirx_analytics_add_consent_filters($params, $where_clause, $bind);
 

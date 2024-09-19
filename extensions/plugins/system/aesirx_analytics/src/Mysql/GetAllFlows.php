@@ -41,23 +41,23 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
             ->where(implode(' AND ', $where_clause));
 
         $sql = $db->getQuery(true)
-        ->select([
-            '#__analytics_flows.*', 
-            'ip', 'user_agent', 'device', 'browser_name', 'browser_version', 'domain', 'lang', 'city', 'isp', 'country_name', 'country_code', 'geo_created_at',
-            'COUNT(DISTINCT #__analytics_events.uuid) AS action',
-            'SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) AS conversion',
-            'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) AS pageview',
-            'SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) AS event',
-            'TIMESTAMPDIFF(SECOND, #__analytics_flows.start, #__analytics_flows.end) AS duration',
-            'MAX(CASE WHEN #__analytics_event_attributes.name = "sop_id" THEN #__analytics_event_attributes.value ELSE NULL END) AS sop_id',
-            'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) * 2 + SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) * 5 + SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) * 10 AS ux_percent'
-        ])
-        ->from($db->quoteName('#__analytics_flows'))
-        ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_flows.visitor_uuid'))
-        ->leftJoin($db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_events.flow_uuid') . ' = ' . $db->quoteName('#__analytics_flows.uuid'))
-        ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_events.uuid') . ' = ' . $db->quoteName('#__analytics_event_attributes.event_uuid'))
-        ->where(implode(' AND ', $where_clause))
-        ->group($db->quoteName('#__analytics_flows.uuid'));
+            ->select([
+                '#__analytics_flows.*', 
+                'ip', 'user_agent', 'device', 'browser_name', 'browser_version', 'domain', 'lang', 'city', 'isp', 'country_name', 'country_code', 'geo_created_at',
+                'COUNT(DISTINCT #__analytics_events.uuid) AS action',
+                'SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) AS conversion',
+                'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) AS pageview',
+                'SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) AS event',
+                'TIMESTAMPDIFF(SECOND, #__analytics_flows.start, #__analytics_flows.end) AS duration',
+                'MAX(CASE WHEN #__analytics_event_attributes.name = "sop_id" THEN #__analytics_event_attributes.value ELSE NULL END) AS sop_id',
+                'SUM(CASE WHEN #__analytics_events.event_name = "visit" THEN 1 ELSE 0 END) * 2 + SUM(CASE WHEN #__analytics_events.event_name != "visit" THEN 1 ELSE 0 END) * 5 + SUM(CASE WHEN #__analytics_events.event_type = "conversion" THEN 1 ELSE 0 END) * 10 AS ux_percent'
+            ])
+            ->from($db->quoteName('#__analytics_flows'))
+            ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_flows.visitor_uuid'))
+            ->leftJoin($db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_events.flow_uuid') . ' = ' . $db->quoteName('#__analytics_flows.uuid'))
+            ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_events.uuid') . ' = ' . $db->quoteName('#__analytics_event_attributes.event_uuid'))
+            ->where(implode(' AND ', $where_clause))
+            ->group($db->quoteName('#__analytics_flows.uuid'));
 
         $sort = parent::aesirx_analytics_add_sort(
             $params,

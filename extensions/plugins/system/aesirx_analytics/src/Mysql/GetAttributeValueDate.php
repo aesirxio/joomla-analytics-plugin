@@ -17,23 +17,23 @@ Class AesirX_Analytics_Get_Attribute_Value_Date extends AesirxAnalyticsMysqlHelp
 
         // Total SQL query
         $total_sql = $db->getQuery(true)
-            ->select('COUNT(DISTINCT ' . $db->quoteName('analytics_event_attributes.name') . ', DATE_FORMAT(' . $db->quoteName('analytics_events.start') . ', "%Y-%m-%d")) as total')
+            ->select('COUNT(DISTINCT ' . $db->quoteName('#__analytics_event_attributes.name') . ', DATE_FORMAT(' . $db->quoteName('#__analytics_events.start') . ', "%Y-%m-%d")) as total')
             ->from($db->quoteName('#__analytics_event_attributes'))
-            ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('analytics_events.uuid'))
-            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('analytics_visitors.uuid') . ' = ' . $db->quoteName('analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
             ->where(implode(' AND ', $where_clause));
 
         // Main SQL query
         $sql = $db->getQuery(true)
             ->select([
-                $db->quoteName('analytics_event_attributes.name'),
-                'DATE_FORMAT(' . $db->quoteName('analytics_events.start') . ', "%Y-%m-%d") as date'
+                $db->quoteName('#__analytics_event_attributes.name'),
+                'DATE_FORMAT(' . $db->quoteName('#__analytics_events.start') . ', "%Y-%m-%d") as date'
             ])
             ->from($db->quoteName('#__analytics_event_attributes'))
-            ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('analytics_events.uuid'))
-            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('analytics_visitors.uuid') . ' = ' . $db->quoteName('analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
             ->where(implode(' AND ', $where_clause))
-            ->group([$db->quoteName('analytics_event_attributes.name'), 'date']);
+            ->group([$db->quoteName('#__analytics_event_attributes.name'), 'date']);
 
         // Add sorting if any
         $sort = self::aesirx_analytics_add_sort($params, ['name', 'date'], 'date');
@@ -60,15 +60,15 @@ Class AesirX_Analytics_Get_Attribute_Value_Date extends AesirxAnalyticsMysqlHelp
             $secondQuery = $db->getQuery(true)
                 ->select([
                     'DATE_FORMAT(' . $db->quoteName('analytics_events.start') . ', "%Y-%m-%d") as date',
-                    $db->quoteName('analytics_event_attributes.name'),
-                    $db->quoteName('analytics_event_attributes.value'),
+                    $db->quoteName('#__analytics_event_attributes.name'),
+                    $db->quoteName('#__analytics_event_attributes.value'),
                     'COUNT(' . $db->quoteName('analytics_event_attributes.id') . ') as count'
                 ])
                 ->from($db->quoteName('#__analytics_event_attributes'))
-                ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('analytics_events.uuid'))
-                ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('analytics_visitors.uuid') . ' = ' . $db->quoteName('analytics_events.visitor_uuid'))
-                ->where($db->quoteName('analytics_event_attributes.name') . ' IN (' . implode(',', array_map([$db, 'quote'], $names)) . ')')
-                ->group([$db->quoteName('analytics_event_attributes.name'), $db->quoteName('analytics_event_attributes.value')]);
+                ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
+                ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+                ->where($db->quoteName('#__analytics_event_attributes.name') . ' IN (' . implode(',', array_map([$db, 'quote'], $names)) . ')')
+                ->group([$db->quoteName('#__analytics_event_attributes.name'), $db->quoteName('#__analytics_event_attributes.value')]);
 
             $db->setQuery($secondQuery);
             $secondArray = $db->loadObjectList();

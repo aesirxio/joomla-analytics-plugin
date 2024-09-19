@@ -33,7 +33,7 @@ Class AesirX_Analytics_Get_All_Event_Name_Type extends AesirxAnalyticsMysqlHelpe
 
         // Building the total SQL query
         $total_sql = $db->getQuery(true)
-            ->select('COUNT(DISTINCT ' . $db->quoteName(['#__analytics_events.event_name', '#__analytics_events.event_type']) . ') as total')
+            ->select('COUNT(DISTINCT ' . ($db->quoteName('#__analytics_events.event_name') . ', ' . $db->quoteName('#__analytics_events.event_type')) . ') as total')
             ->from($db->quoteName('#__analytics_events'))
             ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
             ->where(implode(" AND ", $where_clause));

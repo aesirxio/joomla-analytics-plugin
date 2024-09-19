@@ -1,6 +1,6 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\Filter\InputFilter;
 use Joomla\CMS\Component\ComponentHelper;

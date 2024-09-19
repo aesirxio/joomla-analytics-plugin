@@ -46,7 +46,7 @@ Class AesirX_Analytics_Get_List_Events extends AesirxAnalyticsMysqlHelper
 
         // Main SQL query
         $sql = $db->getQuery(true)
-            ->select([$db->quoteName('#__analytics_events.*'), $db->quoteName('#__analytics_visitors.domain')])
+            ->select(['#__analytics_events.*', $db->quoteName('#__analytics_visitors.domain')])
             ->from($db->quoteName('#__analytics_events'))
             ->leftJoin($db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
             ->leftJoin($db->quoteName('#__analytics_event_attributes') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))

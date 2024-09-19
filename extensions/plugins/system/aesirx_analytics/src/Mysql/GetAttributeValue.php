@@ -17,14 +17,14 @@ Class AesirX_Analytics_Get_Attribute_Value extends AesirxAnalyticsMysqlHelper
         parent::aesirx_analytics_add_attribute_filters($params, $where_clause, $bind);
 
         $total_sql = $db->getQuery(true)
-            ->select('COUNT(DISTINCT ' . $db->quoteName('analytics_event_attributes.name') . ') as total')
+            ->select('COUNT(DISTINCT ' . $db->quoteName('#__analytics_event_attributes.name') . ') as total')
             ->from($db->quoteName('#__analytics_event_attributes'))
             ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
             ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
             ->where(implode(' AND ', $where_clause));
 
         $sql = $db->getQuery(true)
-            ->select('DISTINCT ' . $db->quoteName('analytics_event_attributes.name'))
+            ->select('DISTINCT ' . $db->quoteName('#__analytics_event_attributes.name'))
             ->from($db->quoteName('#__analytics_event_attributes'))
             ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('#__analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('#__analytics_events.uuid'))
             ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
@@ -54,8 +54,8 @@ Class AesirX_Analytics_Get_Attribute_Value extends AesirxAnalyticsMysqlHelper
 
             $secondQuery = $db->getQuery(true);
             $secondQuery->select([
-                $db->quoteName('analytics_event_attributes.name'),
-                $db->quoteName('analytics_event_attributes.value'),
+                $db->quoteName('#__analytics_event_attributes.name'),
+                $db->quoteName('#__analytics_event_attributes.value'),
                 'COUNT(' . $db->quoteName('analytics_event_attributes.id') . ') AS count',
                 'COALESCE(COUNT(DISTINCT ' . $db->quoteName('analytics_events.visitor_uuid') . '), 0) AS number_of_visitors',
                 'COALESCE(COUNT(' . $db->quoteName('analytics_events.visitor_uuid') . '), 0) AS total_number_of_visitors',
@@ -69,8 +69,8 @@ Class AesirX_Analytics_Get_Attribute_Value extends AesirxAnalyticsMysqlHelper
             ->join('LEFT', $db->quoteName('#__analytics_events') . ' ON ' . $db->quoteName('analytics_event_attributes.event_uuid') . ' = ' . $db->quoteName('analytics_events.uuid'))
             ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('analytics_visitors.uuid') . ' = ' . $db->quoteName('analytics_events.visitor_uuid'))
             ->join('LEFT', $db->quoteName('#__analytics_flows') . ' ON ' . $db->quoteName('analytics_flows.uuid') . ' = ' . $db->quoteName('analytics_events.flow_uuid'))
-            ->where($db->quoteName('analytics_event_attributes.name') . ' IN (' . implode(',', array_map([$db, 'quote'], $names)) . ')')
-            ->group([$db->quoteName('analytics_event_attributes.name'), $db->quoteName('analytics_event_attributes.value')]);
+            ->where($db->quoteName('#__analytics_event_attributes.name') . ' IN (' . implode(',', array_map([$db, 'quote'], $names)) . ')')
+            ->group([$db->quoteName('#__analytics_event_attributes.name'), $db->quoteName('analytics_event_attributes.value')]);
 
             $db->setQuery($secondQuery);
             $secondArray = $db->loadObjectList();

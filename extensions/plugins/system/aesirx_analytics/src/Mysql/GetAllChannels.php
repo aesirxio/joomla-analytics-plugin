@@ -53,24 +53,23 @@ Class AesirX_Analytics_Get_All_Channels extends AesirxAnalyticsMysqlHelper
             $where_clause[] = "#__analytics_flows.multiple_events = 0";
         }
 
-         // Build SQL query
-         $sql = "SELECT " . 
-         implode(", ", $select) .
-         " FROM #__analytics_events
-         LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-         LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
-         WHERE " . implode(" AND ", $where_clause) . 
-         " GROUP BY channel";
+        // Build SQL query
+        $sql = $db->getQuery(true)
+            ->select(implode(", ", $select))
+            ->from("#__analytics_events")
+            ->leftJoin("#__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid")
+            ->leftJoin("#__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid")
+            ->where(implode(" AND ", $where_clause))
+            ->group("channel");
 
         // Build the total query
         $total_select = "3 AS total";
-        $total_sql = 
-            "SELECT " . 
-            $total_select . 
-            " FROM #__analytics_events
-            LEFT JOIN #__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid
-            LEFT JOIN #__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid
-            WHERE " . implode(" AND ", $where_clause);
+        $total_sql = $db->getQuery(true)
+            ->select($total_select)
+            ->from("#__analytics_events")  
+            ->leftJoin("#__analytics_visitors ON #__analytics_visitors.uuid = #__analytics_events.visitor_uuid")
+            ->leftJoin("#__analytics_flows ON #__analytics_flows.uuid = #__analytics_events.flow_uuid")
+            ->where(implode(" AND ", $where_clause));
 
         // Allowed sorting columns
         $allowed = [

@@ -1,6 +1,6 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Filter\InputFilter;
 
 Class AesirX_Analytics_Revoke_Consent_Level2 extends AesirxAnalyticsMysqlHelper

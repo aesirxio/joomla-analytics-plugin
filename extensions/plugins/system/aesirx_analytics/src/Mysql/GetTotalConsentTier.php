@@ -32,8 +32,8 @@ Class AesirX_Analytics_Get_Total_Consent_Tier extends AesirxAnalyticsMysqlHelper
             ->where(implode(' AND ', $where_clause))
             ->group($db->quoteName('tier'));
 
-            // Build the total SQL query to get the count of distinct tiers
-            $total_sql = $db->getQuery(true)
+        // Build the total SQL query to get the count of distinct tiers
+        $total_sql = $db->getQuery(true)
             ->select("COUNT(DISTINCT CASE 
                     WHEN " . $db->quoteName('visitor_consent.consent_uuid') . " IS NULL THEN 1
                     WHEN " . $db->quoteName('consent.web3id') . " IS NOT NULL AND " . $db->quoteName('consent.wallet_uuid') . " IS NOT NULL THEN 4

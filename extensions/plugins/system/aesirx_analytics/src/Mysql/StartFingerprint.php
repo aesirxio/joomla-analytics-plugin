@@ -1,6 +1,6 @@
 <?php
 
-use AesirxAnalytics\AesirxAnalyticsMysqlHelper;
+use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\Utilities\Uuid;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;

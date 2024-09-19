@@ -9,6 +9,7 @@ Class AesirX_Analytics_Get_All_Events_Name extends AesirxAnalyticsMysqlHelper
     function aesirx_analytics_mysql_execute($params = [])
     {
         $db = Factory::getDbo();
+        $bind = [];
 
         $where_clause = [
             $db->quoteName('#__analytics_events.event_name') . ' = ' . $db->quote('visit'),

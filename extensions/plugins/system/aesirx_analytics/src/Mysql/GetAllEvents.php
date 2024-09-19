@@ -13,6 +13,7 @@ Class AesirX_Analytics_Get_All_Events extends AesirxAnalyticsMysqlHelper
         // Get Joomla database object
         $db = Factory::getDbo();
         $inputFilter = InputFilter::getInstance();
+        $bind = [];
 
         // Validate and sanitize each parameter in the $params array
         $validated_params = [];
@@ -20,8 +21,8 @@ Class AesirX_Analytics_Get_All_Events extends AesirxAnalyticsMysqlHelper
             $validated_params[$key] = $inputFilter->clean($value, 'STRING');
         }
 
-         // Where clauses and bindings
-         $where_clause = [
+        // Where clauses and bindings
+        $where_clause = [
             $db->quoteName('#__analytics_events.event_name') . ' = ' . $db->quote('visit'),
             $db->quoteName('#__analytics_events.event_type') . ' = ' . $db->quote('action')
         ];

@@ -15,27 +15,22 @@ use Joomla\Utilities\Uuid;
 if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     Class AesirxAnalyticsMysqlHelper
     {
-        public function aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind) {
+        public function aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind = []) {
             $db = Factory::getDbo();
     
             $page = $params['page'] ?? 1;
             $pageSize = $params['page_size'] ?? 20;
             $skip = ($page - 1) * $pageSize;
         
-            $sql .= " LIMIT " . $skip . ", " . $pageSize;
-
-            // Prepare the total elements query
-            $total_query = $db->getQuery(true);
-            $total_query->setQuery($total_sql);
+            $sql->setLimit($pageSize, $skip);
 
             // Bind parameters
             foreach ($bind as $key => $value) {
-                $total_query->bind($key, $value);
+                $total_sql->bind($key, $value);
             }
 
             // Execute the total elements query
-            $db->setQuery($total_query);
-            $total_elements = (int) $db->loadResult();
+            $total_elements = (int) $db->setQuery($total_sql)->loadResult();
             $total_pages = ceil($total_elements / $pageSize);
     
             try {
@@ -51,15 +46,11 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         $collection = $cached_data;
                     } else {
                         // Execute the main query with pagination
-                        $query = $db->getQuery(true);
-                        $query->setQuery($sql);
-        
                         foreach ($bind as $key => $value) {
-                            $query->bind($key, $value);
+                            $sql->bind($key, $value);
                         }
         
-                        $db->setQuery($query);
-                        $collection = $db->loadAssocList();
+                        $collection = $db->setQuery($sql)->loadAssocList();
         
                         // Perform post-processing on the collection
                         if (!empty($collection)) {
@@ -78,15 +69,11 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                     }
                 } else {
                     // Execute the main query without caching
-                    $query = $db->getQuery(true);
-                    $query->setQuery($sql);
-        
                     foreach ($bind as $key => $value) {
-                        $query->bind($key, $value);
+                        $sql->bind($key, $value);
                     }
-        
-                    $db->setQuery($query);
-                    $collection = $db->loadAssocList();
+    
+                    $collection = $db->setQuery($sql)->loadAssocList();
         
                     // Perform post-processing on the collection
                     if (!empty($collection)) {
@@ -127,6 +114,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         public function aesirx_analytics_get_statistics_per_field($groups = [], $selects = [], $params = []) {
     
             $db = Factory::getDbo();
+            $bind = [];
             
             // Define the main select statements
             $select = [
@@ -181,20 +169,24 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             }
 
             // Build the total SQL query
-            $total_sql = "SELECT " . implode(", ", $total_select) . " FROM " . $db->quoteName('#__analytics_events') . "
-            LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') . "
-            LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') . "
-            WHERE " . implode(" AND ", $where_clause);
+            $total_sql = $db->getQuery(true)
+                ->select($total_select)
+                ->from($db->quoteName('#__analytics_events'))
+                ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+                ->join('LEFT', $db->quoteName('#__analytics_flows') . ' ON ' . $db->quoteName('#__analytics_flows.uuid') . ' = ' . $db->quoteName('#__analytics_events.flow_uuid'))
+                ->where(implode(" AND ", $where_clause));
 
             // Build the main SQL query
-            $sql = "SELECT " . implode(", ", $select) . " FROM " . $db->quoteName('#__analytics_events') . "
-            LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') . "
-            LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') . "
-            WHERE " . implode(" AND ", $where_clause);        
+            $sql = $db->getQuery(true)
+                ->select($select)
+                ->from($db->quoteName('#__analytics_events'))
+                ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+                ->join('LEFT', $db->quoteName('#__analytics_flows') . ' ON ' . $db->quoteName('#__analytics_flows.uuid') . ' = ' . $db->quoteName('#__analytics_events.flow_uuid'))
+                ->where(implode(" AND ", $where_clause));
     
             // Group the results by the groups if provided
             if (!empty($groups)) {
-                $sql .= " GROUP BY " . implode(", ", $groups);
+                $sql->group(implode(", ", $groups));
             }
     
             $allowed = [
@@ -284,7 +276,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             break;
                         case 'end':
                             try {
-                                $where_clause[] = "UNIX_TIMESTAMP(#__analytics_events." . $key . ") < " . strtotime($list[0]) . " +1 day";
+                                $where_clause[] = "UNIX_TIMESTAMP(#__analytics_events." . $key . ") < " . strtotime($list[0] . ' +1 day');
                             } catch (Exception $e) {
                                 Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                                 throw new InvalidArgumentException('"end" filter is not correct');
@@ -292,7 +284,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             break;
                         case 'event_name':
                         case 'event_type':
-                            $where_clause[] = '#__analytics_events.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ( ' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
+                            $where_clause[] = '#__analytics_events.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ("' . implode('", "', array_map([$inputFilter, 'clean'], $list)) . '")';
                             break;
                         case 'city':
                         case 'isp':
@@ -304,7 +296,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         case 'browser_version':
                         case 'device':
                         case 'lang':
-                            $where_clause[] = '#__analytics_visitors.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
+                            $where_clause[] = '#__analytics_visitors.' . $key . ' ' . ($is_not ? 'NOT ' : '') . 'IN ("' . implode('", "', array_map([$inputFilter, 'clean'], $list)) . '")';
                             break;
                         default:
                             break;
@@ -326,17 +318,17 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         case "attribute_name":
                             if ($is_not) {
                                 $where_clause[] = '#__analytics_event_attributes.event_uuid IS NULL 
-                                    OR #__analytics_event_attributes.name NOT IN ( ' . implode(', ', $list) . ')';
+                                    OR #__analytics_event_attributes.name NOT IN ("' . implode('", "', $list) . '")';
                             } else {
-                                $where_clause[] = '#__analytics_event_attributes.name IN ( ' . implode(', ', $list) . ')';
+                                $where_clause[] = '#__analytics_event_attributes.name IN ("' . implode('", "', $list) . '")';
                             }
                             break;
                         case "attribute_value":
                             if ($is_not) {
                                 $where_clause[] = '#__analytics_event_attributes.event_uuid IS NULL 
-                                    OR #__analytics_event_attributes.value NOT IN ( ' . implode(', ', $list) . ')';
+                                    OR #__analytics_event_attributes.value NOT IN ("' . implode('", "', $list) . '")';
                             } else {
-                                $where_clause[] = '#__analytics_event_attributes.value IN ( ' . implode(', ', $list) . ')';
+                                $where_clause[] = '#__analytics_event_attributes.value IN ("' . implode('", "', $list) . '")';
                             }
                             break;
                         default:
@@ -680,14 +672,14 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                             break;
                         case 'end':
                             try {
-                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) < " . strtotime($list[0]) . " +1 day";
+                                $where_clause[] = "UNIX_TIMESTAMP(visitor_consent.datetime) < " . strtotime($list[0] . ' +1 day');
                             } catch (Exception $e) {
                                 Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                                 throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"end" filter is not correct'), 400);
                             }
                             break;
                         case 'domain':
-                            $where_clause[] = 'domain ' . ($is_not ? 'NOT ' : '') . 'IN (' . implode(', ', array_map([$inputFilter, 'clean'], $list)) . ')';
+                            $where_clause[] = 'domain ' . ($is_not ? 'NOT ' : '') . 'IN ("' . implode('", "', array_map([$inputFilter, 'clean'], $list)) . '")';
                             break;
                         default:
                             break;
@@ -711,7 +703,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                         break;
                     case 'end':
                         try {
-                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") < " . strtotime($list[0]) . " +1 day";
+                            $where_clause[] = "UNIX_TIMESTAMP(#__analytics_flows." . $key . ") < " . strtotime($list[0] . ' +1 day');
                         } catch (Exception $e) {
                             Log::add('Validation error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                             throw new Exception(Text::_('JGLOBAL_VALIDATION_ERROR') . ': ' . Text::_('"end" filter is not correct'), 400);
