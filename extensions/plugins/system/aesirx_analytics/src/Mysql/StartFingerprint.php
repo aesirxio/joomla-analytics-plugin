@@ -71,12 +71,12 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
         } else {
             // Parse the URL and check if the domain matches the visitor's domain
             $url = Uri::getInstance($params['request']['url']);
-            if (!$url || !isset($url['host'])) {
+            if (!$url->getHost()) {
                 Factory::getApplication()->enqueueMessage(Text::_('Wrong URL format, domain not found'), 'error');
                 return false;
             }
 
-            if ($url['host'] != $visitor['domain']) {
+            if ($url->getHost() != $visitor['domain']) {
                 Factory::getApplication()->enqueueMessage(Text::_('The domain sent in the new URL does not match the domain stored in the visitor document'), 'error');
                 return false;
             }
@@ -92,7 +92,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
     
             if ($params['request']['referer']) {
                 $referer = Uri::getInstance($params['request']['referer']);
-                if ($referer && $referer['host'] == $url['host'] && $visitor['visitor_flows']) {
+                if ($referer && $referer->getHost() == $url->getHost() && $visitor['visitor_flows']) {
                     $list = $visitor['visitor_flows'];
                     if (!empty($list)) {
                         $first = $list[0];
