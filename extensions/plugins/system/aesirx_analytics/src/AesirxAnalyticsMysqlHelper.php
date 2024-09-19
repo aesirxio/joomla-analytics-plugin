@@ -1001,7 +1001,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $apiUrl = 'http://dev01.aesirx.io:8888/validate/string?nonce=' 
             . $inputFilter->clean($nonce, 'STRING') . '&wallet=' 
             . $inputFilter->clean($wallet, 'STRING') . '&signature=' 
-            . $inputFilter->clean($signature, 'STRING');
+            . $inputFilter->clean($singnature, 'STRING');
 
             // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();

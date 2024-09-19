@@ -68,6 +68,6 @@ class plgSystemAesirx_AnalyticsInstallerScript
     public function update($parent)
     {
         // Actions to perform during an update
-        $this->aesirx_analytics_initialize_function();
+        
     }
 }
