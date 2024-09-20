@@ -1086,7 +1086,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             return $data;
         }
     
-        function aesirx_analytics_expired_consent($consentUuid, $expiration) {
+        function aesirx_analytics_expired_consent($consent_uuid, $expiration) {
             try {
                  // Get the Joomla database object
                 $db = Factory::getDbo();
@@ -1102,7 +1102,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 
                 // Prepare the condition for the update
                 $conditions = [
-                    $db->quoteName('uuid') . ' = ' . $db->quote($inputFilter->clean($consentUuid, 'STRING')),
+                    $db->quoteName('uuid') . ' = ' . $db->quote($inputFilter->clean($consent_uuid, 'STRING')),
                 ];
 
                 // Create the update query
