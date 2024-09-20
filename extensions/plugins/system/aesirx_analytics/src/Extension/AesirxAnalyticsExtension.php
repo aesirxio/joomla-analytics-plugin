@@ -123,7 +123,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 						'window.env = {};
 				window.env.REACT_APP_CLIENT_ID = "' . $clientId . '";
 				window.env.REACT_APP_CLIENT_SECRET = "' . $clientSecret . '";
-				window.env.REACT_APP_ENDPOINT_URL = "' . rtrim($endpoint, '/') . '";
+				window.env.REACT_APP_BI_ENDPOINT_URL = "' . $endpoint . '";
 				window.env.REACT_APP_DATA_STREAM = JSON.stringify(' . json_encode($streams) . ');
 				window.env.PUBLIC_URL="' . Uri::root() . 'media/plg_system_aesirx_analytics/";
 				window.env.STORAGE="' . $params->get('1st_party_server') . '";' . ($params->get('1st_party_server', 'internal') === 'external' ? 'window.env.REACT_APP_HEADER_JWT="true";' : ''),
@@ -212,7 +212,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$callCommand = function (array $command): string {
 			try
 			{
-				$process = $this->cli->processAnalytics($command);
+				$data = $this->cli->processAnalytics($command);
 			}
 			catch (Throwable $e)
 			{
@@ -242,7 +242,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				header('Content-Type: application/json; charset=utf-8');
 			}
 
-			return $process->getOutput();
+			return $data;
 		};
 
 		try
@@ -251,9 +251,10 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 			$needle = '/administrator';
 			$newUri = clone Uri::getInstance();
 
-			if (substr_compare($base, $needle, -strlen($needle)) === 0)
+			if (!is_null($base) && substr_compare($base, $needle, -strlen($needle)) === 0)
 			{
-				if(str_contains($newUri->getVar('path'), 'filter[domain]='))
+				$path = $newUri->getVar('path');
+				if(!is_null($path) && str_contains($path, 'filter[domain]='))
 				{
 					$newHost = array('domain' => $newUri->getHost());
 					$newUri->setVar('filter', $newHost);
@@ -315,7 +316,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 		$storage = $params->get('1st_party_server', 'internal');
 		$res     = (!empty($storage)
 			&& (
-				($storage == 'internal' && !empty($params->get('license')) && $this->cli->analyticsCliExists())
+				($storage == 'internal')
 				|| ($storage == 'external' && !empty($params->get('domain')))
 			));
 
@@ -334,8 +335,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 
 		if ($app->getName() != 'administrator'
 			|| $app->input->getString('option') != 'com_aesirx_analytics'
-			|| $this->analyticsConfigIsOk()
-			|| $app->input->getString('task') == 'display.download_cli')
+			|| $this->analyticsConfigIsOk())
 		{
 			return;
 		}

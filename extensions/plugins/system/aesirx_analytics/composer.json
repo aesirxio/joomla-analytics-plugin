@@ -7,7 +7,9 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.2",
-        "aesirx/aesirx_analytics_lib": "^1"
+        "php-aesirx/aesirx_analytics_lib": "dev-master",
+        "guzzlehttp/guzzle": "^7.8",
+        "symfony/deprecation-contracts": "^2.2"
     },
     "require-dev": {
         "voku/portable-utf8": "6.0.12 as 5.4.0",
