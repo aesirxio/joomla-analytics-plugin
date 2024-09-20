@@ -1,10 +1,10 @@
 #biapp {
   margin-left: -32px;
-  margin-top: -47px;
   margin-right: -32px;
   background-color: #fff;
   #all_header {
     position: relative !important;
+    top: 0;
   }
   .arrow {
     position: static !important;
@@ -23,7 +23,7 @@
 
   .main_content_dashboard {
     height: 100% !important;
-    padding-top: 30px;
+    padding-top: 0;
   }
 }
 [data-bs-theme='dark'] {
