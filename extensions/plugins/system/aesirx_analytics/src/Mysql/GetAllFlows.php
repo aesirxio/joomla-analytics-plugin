@@ -12,6 +12,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
     function aesirx_analytics_mysql_execute($params = [])
     {
         $db = Factory::getDbo();
+        $inputFilter = InputFilter::getInstance();
 
         $where_clause = [
             $db->quoteName('#__analytics_visitors.ip') . ' != ""',
@@ -362,13 +363,13 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         'action' => $item->action,
                         'event' => $item->event,
                         'conversion' => $item->conversion,
-                        'url' => $item->url,
+                        'url' => $item->url ?? '',
                         'ux_percent' => $item->ux_percent,
                         'pageview' => $item->pageview,
                         'sop_id' => $item->sop_id,
-                        'visit_actions' => $item->visit_actions,
-                        'event_actions' => $item->event_actions,
-                        'conversion_actions' => $item->conversion_actions,
+                        'visit_actions' => $item->visit_actions ?? 0,
+                        'event_actions' => $item->event_actions ?? 0,
+                        'conversion_actions' => $item->conversion_actions ?? 0,
                         'bad_user' => $bad_url_count > 1 ? true : false,
                     ];
                 }
@@ -391,13 +392,13 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         'action' => $item->action,
                         'event' => $item->event,
                         'conversion' => $item->conversion,
-                        'url' => $item->url,
+                        'url' => $item->url ?? '',
                         'ux_percent' => $item->ux_percent,
                         'pageview' => $item->pageview,
                         'sop_id' => $item->sop_id,
-                        'visit_actions' => $item->visit_actions,
-                        'event_actions' => $item->event_actions,
-                        'conversion_actions' => $item->conversion_actions,
+                        'visit_actions' => $item->visit_actions ?? 0,
+                        'event_actions' => $item->event_actions ?? 0,
+                        'conversion_actions' => $item->conversion_actions ?? 0,
                     ];
                 }
             }

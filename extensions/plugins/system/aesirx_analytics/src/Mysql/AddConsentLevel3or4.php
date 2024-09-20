@@ -117,7 +117,7 @@ Class AesirX_Analytics_Add_Consent_Level3or4 extends AesirxAnalyticsMysqlHelper
         // Prepare SQL conditions based on input parameters
         $domain_condition = $domain ? $db->quoteName('visitor.domain') . ' = ' . $db->quote($domain) : "";
         $expired_condition = !$expired ? $db->quoteName('consent.expiration') . ' IS NULL' : "";
-        $web3id_condition = $web3id ? $db->quoteName('consent.web3id') . ' = ' . $db->quote($web3id) : "AND consent.web3id IS NULL";
+        $web3id_condition = $web3id ? $db->quoteName('consent.web3id') . ' = ' . $db->quote($web3id) : " consent.web3id IS NULL";
 
         try {
             // Create a new query object
