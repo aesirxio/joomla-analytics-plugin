@@ -24,6 +24,7 @@ Class AesirX_Analytics_Get_Live_Visitors_Device extends AesirxAnalyticsMysqlHelp
         ];
 
         $total_select = [];
+        $bind = [];
 
         // Grouping criteria
         $groups = [$db->quoteName('#__analytics_visitors.device')];
@@ -49,20 +50,24 @@ Class AesirX_Analytics_Get_Live_Visitors_Device extends AesirxAnalyticsMysqlHelp
         parent::aesirx_analytics_add_filters($params, $where_clause, $bind);
 
         // Building total SQL query
-        $total_sql = "SELECT " . implode(", ", $total_select) . " FROM " . $db->quoteName('#__analytics_events') .
-            " LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') .
-            " LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') .
-            " WHERE " . implode(" AND ", $where_clause);
+        $total_sql = $db->getQuery(true)
+            ->select(implode(", ", $total_select))
+            ->from($db->quoteName('#__analytics_events'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_flows') . ' ON ' . $db->quoteName('#__analytics_flows.uuid') . ' = ' . $db->quoteName('#__analytics_events.flow_uuid'))
+            ->where(implode(" AND ", $where_clause));
 
         // Building main SQL query
-        $sql = "SELECT " . implode(", ", $select) . " FROM " . $db->quoteName('#__analytics_events') .
-            " LEFT JOIN " . $db->quoteName('#__analytics_visitors') . " ON " . $db->quoteName('#__analytics_visitors.uuid') . " = " . $db->quoteName('#__analytics_events.visitor_uuid') .
-            " LEFT JOIN " . $db->quoteName('#__analytics_flows') . " ON " . $db->quoteName('#__analytics_flows.uuid') . " = " . $db->quoteName('#__analytics_events.flow_uuid') .
-            " WHERE " . implode(" AND ", $where_clause);
+        $sql = $db->getQuery(true)
+            ->select(implode(", ", $select))
+            ->from($db->quoteName('#__analytics_events'))
+            ->join('LEFT', $db->quoteName('#__analytics_visitors') . ' ON ' . $db->quoteName('#__analytics_visitors.uuid') . ' = ' . $db->quoteName('#__analytics_events.visitor_uuid'))
+            ->join('LEFT', $db->quoteName('#__analytics_flows') . ' ON ' . $db->quoteName('#__analytics_flows.uuid') . ' = ' . $db->quoteName('#__analytics_events.flow_uuid'))
+            ->where(implode(" AND ", $where_clause));
 
         // Add GROUP BY clause if needed
         if (!empty($groups)) {
-            $sql .= " GROUP BY " . implode(", ", $groups);
+            $sql->group(implode(", ", $groups));
         }
 
         $allowed = [
@@ -87,7 +92,7 @@ Class AesirX_Analytics_Get_Live_Visitors_Device extends AesirxAnalyticsMysqlHelp
         $sort = parent::aesirx_analytics_add_sort($params, $allowed, $default);
 
         if (!empty($sort)) {
-            $sql .= " ORDER BY " . implode(", ", $sort);
+            $sql->order(implode(", ", $sort));
         }
 
         return parent::aesirx_analytics_get_list($sql, $total_sql, $params, $allowed, $bind);
