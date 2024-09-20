@@ -9,7 +9,9 @@
   .arrow {
     position: static !important;
   }
-
+  .wrapper_header_logo, .sidebar {
+    display: none !important;
+  }
   .loader {
     display: flex;
     align-items: center;
