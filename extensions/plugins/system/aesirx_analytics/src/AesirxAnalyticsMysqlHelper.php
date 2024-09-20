@@ -999,9 +999,9 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $inputFilter = InputFilter::getInstance();
 
             $apiUrl = 'http://dev01.aesirx.io:8888/validate/string?nonce=' 
-            . $inputFilter->clean($nonce, 'STRING') . '&wallet=' 
-            . $inputFilter->clean($wallet, 'STRING') . '&signature=' 
-            . $inputFilter->clean($singnature, 'STRING');
+            . urlencode($inputFilter->clean($nonce, 'STRING')) . '&wallet=' 
+            . urlencode($inputFilter->clean($wallet, 'STRING')) . '&signature=' 
+            . urlencode($inputFilter->clean($singnature, 'STRING'));
 
             // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
@@ -1031,7 +1031,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
 
             // Build the API URL with sanitized parameters
             $apiUrl = 'http://dev01.aesirx.io:8888/validate/wallet?wallet=' 
-                . $inputFilter->clean($wallet, 'STRING');
+                . urlencode($inputFilter->clean($wallet, 'STRING'));
            // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
             $options = array(

@@ -254,6 +254,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 			if (!is_null($base) && substr_compare($base, $needle, -strlen($needle)) === 0)
 			{
 				$path = $newUri->getVar('path');
+				
 				if(!is_null($path) && str_contains($path, 'filter[domain]='))
 				{
 					$newHost = array('domain' => $newUri->getHost());
