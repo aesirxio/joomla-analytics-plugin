@@ -1463,19 +1463,19 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 );
 
                 // Sanitize the IP using InputFilter
-                $sanitizedIp = $filter->clean($ip, 'STRING');
+                $sanitizedIp = $inputFilter->clean($ip, 'STRING');
 
                 // Prepare the update query
                 $query = $db->getQuery(true)
-                ->update($db->quoteName('#__analytics_visitors')) // Use Joomla table with automatic prefixing
-                ->set($db->quoteName('isp') . ' = ' . $db->quote($sanitizedData['isp']))
-                ->set($db->quoteName('country_code') . ' = ' . $db->quote($sanitizedData['country_code']))
-                ->set($db->quoteName('country_name') . ' = ' . $db->quote($sanitizedData['country_name']))
-                ->set($db->quoteName('city') . ' = ' . $db->quote($sanitizedData['city']))
-                ->set($db->quoteName('region') . ' = ' . $db->quote($sanitizedData['region']))
-                ->set($db->quoteName('geo_created_at') . ' = ' . $db->quote($sanitizedData['geo_created_at']))
-                ->where($db->quoteName('geo_created_at') . ' IS NULL')
-                ->where($db->quoteName('ip') . ' = ' . $db->quote($sanitizedIp));
+                    ->update($db->quoteName('#__analytics_visitors')) // Use Joomla table with automatic prefixing
+                    ->set($db->quoteName('isp') . ' = ' . $db->quote($sanitizedData['isp']))
+                    ->set($db->quoteName('country_code') . ' = ' . $db->quote($sanitizedData['country_code']))
+                    ->set($db->quoteName('country_name') . ' = ' . $db->quote($sanitizedData['country_name']))
+                    ->set($db->quoteName('city') . ' = ' . $db->quote($sanitizedData['city']))
+                    ->set($db->quoteName('region') . ' = ' . $db->quote($sanitizedData['region']))
+                    ->set($db->quoteName('geo_created_at') . ' = ' . $db->quote($sanitizedData['geo_created_at']))
+                    ->where($db->quoteName('geo_created_at') . ' IS NULL')
+                    ->where($db->quoteName('ip') . ' = ' . $db->quote($sanitizedIp));
                 
                 // Execute the query
                 $db->setQuery($query);
