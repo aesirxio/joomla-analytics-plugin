@@ -48,7 +48,7 @@ Class AesirX_Analytics_Start_Fingerprint extends AesirxAnalyticsMysqlHelper
                 'visitor_uuid' => $new_visitor['uuid'],
                 'flow_uuid' => $new_visitor_flow['uuid'],
                 'url' => $params['request']['url'],
-                'referer' => $params['request']['referer'],
+                'referer' => $params['request']['referer'] ?? '',
                 'start' => $start,
                 'end' => $start,
                 'event_name' => $params['request']['event_name'] ?? 'visit',
