@@ -7,7 +7,7 @@
 	<authorUrl>dxp.aesir.io</authorUrl>
 	<copyright>Copyright (C) 2016 - 2023 Aesir. All rights reserved.</copyright>
 	<license>GNU/GPL</license>
-	<version>1.0.0</version>
+	<version>4.0.0</version>
 	<description>PLG_SYSTEM_AESIRX_ANALYTICS_DESC</description>
 	<namespace path="src">Aesirx\System\AesirxAnalytics</namespace>
 	<files>
