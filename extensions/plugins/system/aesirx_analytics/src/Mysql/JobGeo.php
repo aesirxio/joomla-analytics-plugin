@@ -4,7 +4,7 @@ use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Filter\InputFilter;
-use Joomla\Component\ComponentHelper;
+use Joomla\CMS\Component\ComponentHelper;
 
 Class AesirX_Analytics_Job_Geo extends AesirxAnalyticsMysqlHelper
 {
