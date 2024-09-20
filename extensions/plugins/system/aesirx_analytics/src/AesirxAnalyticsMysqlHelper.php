@@ -1411,23 +1411,19 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 $db = Factory::getDbo();
         
                 // Prepare the query to select distinct IPs where geo data is missing
-                $query = $db->getQuery(true)
+                $sql = $db->getQuery(true)
                     ->select('DISTINCT ip')
                     ->from($db->quoteName('#__analytics_visitors'))
                     ->where($db->quoteName('geo_created_at') . ' IS NULL');
         
                 // Prepare the query to count the total number of distinct IPs
-                $countQuery = $db->getQuery(true)
+                $total_sql = $db->getQuery(true)
                     ->select('COUNT(DISTINCT ip) as total')
                     ->from($db->quoteName('#__analytics_visitors'))
                     ->where($db->quoteName('geo_created_at') . ' IS NULL');
-        
-                // Converting queries to strings for external function call
-                $sql = $query->__toString();
-                $total_sql = $countQuery->__toString();
 
                 // Assuming aesirx_analytics_get_list is a custom function for handling list response
-                $list_response = aesirx_analytics_get_list($sql, $total_sql, $params, $allowed = [], $bind = []);
+                $list_response = self::aesirx_analytics_get_list($sql, $total_sql, $params, $allowed = [], $bind = []);
 
                 // Check if list_respons is false or returns an error and return
                 if ($list_response === false || (is_array($list_response) && isset($list_response['error']))) {
