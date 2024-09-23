@@ -66,7 +66,7 @@ Class AesirX_Analytics_Job_Geo extends AesirxAnalyticsMysqlHelper
                         'code' => $result['country_code']
                     ],
                     'city' => $result['city'],
-                    'region' => $result['region'],
+                    'region' => $result['region'] ?? '',
                     'isp' => $result['isp'],
                     'created_at' => $now,
                 ]
