@@ -181,7 +181,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         
                                 // Check the status code of the response
                                 $status_code = $response->code;
-                            } catch (RuntimeException $e) {
+                            } catch (\RuntimeException $e) {
                                 // If an error occurs, set status code to 500
                                 $status_code = 500;
                             }
