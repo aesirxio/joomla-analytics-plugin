@@ -1012,7 +1012,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1041,7 +1041,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1072,7 +1072,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1554,7 +1554,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                     Log::add('API error: Received HTTP ' . $response->code, Log::ERROR, 'aesirx-analytics');
                     return false;
                 }
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log the error and return a meaningful error message
                 Log::add('API request error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
@@ -1600,7 +1600,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 }
 
                 return $og_data;
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and return null
                 Log::add('Failed to fetch the page: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 return null;
