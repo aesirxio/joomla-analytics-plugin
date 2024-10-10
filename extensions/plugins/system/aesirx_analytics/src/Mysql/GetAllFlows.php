@@ -4,7 +4,6 @@ use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Http\HttpFactory;
-use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Http\Response;
 
 Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
@@ -116,7 +115,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                     $queryEvents = $db->getQuery(true)
                         ->select('*')
                         ->from($db->quoteName('#__analytics_events'))
-                        ->where($db->quoteName('flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+                        ->where($db->quoteName('flow_uuid') . ' IN (' . implode(',', array_map([$db, 'quote'], $bind)) . ')');
 
                     // Set the query and execute it to get events
                     $db->setQuery($queryEvents);
@@ -128,7 +127,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         ->select('*')
                         ->from($db->quoteName('#__analytics_event_attributes', 'attr'))
                         ->join('LEFT', $db->quoteName('#__analytics_events', 'evt') . ' ON ' . $db->quoteName('evt.uuid') . ' = ' . $db->quoteName('attr.event_uuid'))
-                        ->where($db->quoteName('evt.flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+                        ->where($db->quoteName('evt.flow_uuid') . ' IN (' . implode(',', array_map([$db, 'quote'], $bind)) . ')');
 
                     // Set the query
                     $db->setQuery($queryAttributes);
@@ -171,7 +170,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         $second->og_description = $og_description;
                         $second->og_image = $og_image;
 
-                        if (!Uri::isValid($second->url)) {
+                        if (!filter_var($second->url, FILTER_VALIDATE_URL)) {
                             $status_code = 404;
                         } else {
                             // Use Joomla's HTTP client to make the HEAD request
@@ -182,7 +181,7 @@ Class AesirX_Analytics_Get_All_Flows extends AesirxAnalyticsMysqlHelper
                         
                                 // Check the status code of the response
                                 $status_code = $response->code;
-                            } catch (RuntimeException $e) {
+                            } catch (\RuntimeException $e) {
                                 // If an error occurs, set status code to 500
                                 $status_code = 500;
                             }

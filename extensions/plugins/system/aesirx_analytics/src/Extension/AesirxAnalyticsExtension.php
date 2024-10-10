@@ -253,21 +253,36 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 
 			if (!is_null($base) && substr_compare($base, $needle, -strlen($needle)) === 0)
 			{
-				$path = $newUri->getVar('path');
-
-				if(!is_null($path) && str_contains($path, 'filter[domain]'))
-				{
-					$newHost = array('domain' => $newUri->getHost());
-					$newUri->setVar('filter', $newHost);
-				}
-
 				$query = $newUri->getQuery(true);
 				$path  = $query['path'] ?? null;
 
 				if ($path)
 				{
 					unset($query['path']);
-					$newUri->setPath(rtrim($newUri->getPath(), '/') . '/' . $path);
+
+					// Check if the path contains a '?'
+					if (strpos($path, '?') !== false) {
+						// Split the path into the actual path and the query part
+						list($cleanPath, $queryString) = explode('?', $path, 2);
+
+						// Convert the query string into an associative array
+						parse_str($queryString, $queryParams);
+				
+						// Check if 'filter' already exists in $query and $queryParams
+						if (isset($query['filter']) && isset($queryParams['filter'])) {
+							// Merge 'filter' arrays recursively to avoid overwriting
+							$query['filter'] = array_merge_recursive($query['filter'], $queryParams['filter']);
+						} else {
+							// If no 'filter' in $query or $queryParams, just merge normally
+							$query = array_merge($query, $queryParams);
+						}
+				
+						// Update the path with the clean part (without the query string)
+						$newUri->setPath(rtrim($newUri->getPath(), '/') . '/' . $cleanPath);
+					} else {
+						// No query string, just append the path as is
+						$newUri->setPath(rtrim($newUri->getPath(), '/') . '/' . $path);
+					}
 					$newUri->setQuery($query);
 				}
 			}

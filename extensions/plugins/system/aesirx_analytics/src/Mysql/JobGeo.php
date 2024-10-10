@@ -42,7 +42,7 @@ Class AesirX_Analytics_Job_Geo extends AesirxAnalyticsMysqlHelper
         // Make the POST request
         try {
             $response = $http->post($config['url_api_enrich'], $body, $headers);
-        } catch (Exception $e) {
+        } catch (\RuntimeException $e) {
             Factory::getApplication()->enqueueMessage("Error in API request: " . $e->getMessage(), 'error');
             return false;
         }
