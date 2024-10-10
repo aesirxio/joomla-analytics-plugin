@@ -98,7 +98,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 ];
 
                 // If it's a metrics request, return the first item
-                if (isset($params['type']) && $params['type'] == "metrics") {
+                if (isset($params[1]) && $params[1] == "metrics") {
                     $list_response = $list_response['collection'][0] ?? [];
                 }
 
@@ -855,7 +855,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             }
         }
     
-        function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null) {
+        function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null, $params = []) {
             $db = Factory::getDbo();
             $inputFilter = InputFilter::getInstance();
             $uuid = Uuid::uuid4()->toString();
