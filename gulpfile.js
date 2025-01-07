@@ -66,6 +66,11 @@ const customMethods = {
 			},
 			function () {
 				return gulp
+					.src(['./node_modules/aesirx-consent/dist/consent.js'])
+					.pipe(gulp.dest(`./extensions/plugins/system/aesirx_analytics/media/assets/js`));
+			},
+			function () {
+				return gulp
 					.src('./assets/bi/index.tsx')
 					.pipe(webpack(require('./webpack.config.js')))
 					.pipe(gulp.dest(`./extensions/plugins/system/aesirx_analytics/media`));
@@ -141,6 +146,12 @@ function moveAnalyticJSTask() {
 		.pipe(gulp.dest(`${dist}/media/plg_system_aesirx_analytics/assets/js`));
 }
 
+function moveConsentJSTask() {
+	return gulp
+		.src(['./node_modules/aesirx-consent/dist/consent.js'])
+		.pipe(gulp.dest(`${dist}/media/plg_system_aesirx_analytics/assets/js`));
+}
+
 function webpackBIApp() {
 	return gulp
 		.src('./assets/bi/index.tsx')
@@ -185,6 +196,7 @@ exports.watch = series(
 	},
 	parallel(
 		moveAnalyticJSTask,
+		moveConsentJSTask,
 		function () {
 			return gulp
 				.src('./node_modules/aesirx-bi-app/public/assets/images/**')
