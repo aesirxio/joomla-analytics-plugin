@@ -2,6 +2,8 @@
 
 namespace Aesirx\System\AesirxAnalytics;
 
+require_once __DIR__ . '/../ramsey-vendor/autoload.php';
+
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;

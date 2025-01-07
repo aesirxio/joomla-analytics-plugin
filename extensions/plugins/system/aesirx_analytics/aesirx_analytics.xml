@@ -16,6 +16,7 @@
 		<folder>language</folder>
 		<folder>src</folder>
 		<folder>vendor</folder>
+		<folder>ramsey-vendor</folder>
 	</files>
 	<media folder="media" destination="plg_system_aesirx_analytics">
 		<folder>assets</folder>

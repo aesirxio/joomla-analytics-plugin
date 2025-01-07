@@ -157,8 +157,13 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 				{
 					$wa->registerScript('plg_system_aesirx_analytics.analytics', 'media/plg_system_aesirx_analytics/assets/js/analytics.js', [], ['defer' => true]);
 				}
+				if (!$wa->assetExists('script', 'plg_system_aesirx_analytics.consent'))
+				{
+					$wa->registerScript('plg_system_aesirx_analytics.consent', 'media/plg_system_aesirx_analytics/assets/js/consent.js', [], ['defer' => true]);
+				}
 
 				$wa->useScript('plg_system_aesirx_analytics.analytics');
+				$wa->useScript('plg_system_aesirx_analytics.consent');
 
 				$params = ComponentHelper::getParams('com_aesirx_analytics');
 				$uri    = Uri::getInstance();
