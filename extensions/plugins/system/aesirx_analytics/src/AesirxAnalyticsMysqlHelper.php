@@ -957,13 +957,13 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $consentDomainList = [];
     
             foreach ($consents as $consent) {
-                if (empty($consent['visitor'])) {
+                if (empty($consent->visitor)) {
                     continue;
                 }
     
                  // Use InputFilter to sanitize data
-                $visitorDomain = isset($consent['visitor'][0]['domain']) ? $inputFilter->clean($consent['visitor'][0]['domain'], 'STRING') : null;
-                
+                $visitorDomain = isset($consent->visitor[0]->domain) ? $inputFilter->clean($consent->visitor[0]->domain, 'STRING') : null;
+                // var_dump( $visitorDomain);die;
                 if ($visitorDomain === null) {
                     continue;
                 }
