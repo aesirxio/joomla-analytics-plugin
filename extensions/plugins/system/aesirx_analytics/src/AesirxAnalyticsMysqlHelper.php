@@ -1000,7 +1000,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
         function aesirx_analytics_validate_string($nonce, $wallet, $singnature) {
             $inputFilter = InputFilter::getInstance();
 
-            $apiUrl = 'http://web3.aesirx.io/:8888/validate/string?nonce=' 
+            $apiUrl = 'http://web3.aesirx.io:8888/validate/string?nonce=' 
             . urlencode($inputFilter->clean($nonce, 'STRING')) . '&wallet=' 
             . urlencode($inputFilter->clean($wallet, 'STRING')) . '&signature=' 
             . urlencode($inputFilter->clean($singnature, 'STRING'));
@@ -1032,7 +1032,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $inputFilter = InputFilter::getInstance();
 
             // Build the API URL with sanitized parameters
-            $apiUrl = 'http://web3.aesirx.io/:8888/validate/wallet?wallet=' 
+            $apiUrl = 'http://web3.aesirx.io:8888/validate/wallet?wallet=' 
                 . urlencode($inputFilter->clean($wallet, 'STRING'));
            // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
@@ -1062,7 +1062,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $inputFilter = InputFilter::getInstance();
 
             // API URL
-            $apiUrl = 'http://web3.aesirx.io/:8888/validate/contract';
+            $apiUrl = 'http://web3.aesirx.io:8888/validate/contract';
 
             // Use Joomla's HttpFactory to perform a GET request
             $http = HttpFactory::getHttp();
@@ -1534,7 +1534,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             $token = $inputFilter->clean($token, 'STRING');
 
             // API URL
-            $apiUrl = 'http://web3.aesirx.io/:8888/check/web3id';
+            $apiUrl = 'http://web3.aesirx.io:8888/check/web3id';
 
             // HTTP options for Joomla
             $options = array(
