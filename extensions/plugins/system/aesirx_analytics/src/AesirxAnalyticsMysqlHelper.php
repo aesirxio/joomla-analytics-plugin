@@ -963,7 +963,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
     
                  // Use InputFilter to sanitize data
                 $visitorDomain = isset($consent->visitor[0]->domain) ? $inputFilter->clean($consent->visitor[0]->domain, 'STRING') : null;
-                // var_dump( $visitorDomain);die;
+
                 if ($visitorDomain === null) {
                     continue;
                 }
