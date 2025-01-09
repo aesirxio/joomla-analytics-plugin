@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>info@aesir.io</authorEmail>
 	<authorUrl>aesir.io</authorUrl>
-	<version>4.0.0</version>
+	<version>4.1.0</version>
 	<description>COM_AESIRX_ANALYTICS_XML_DESCRIPTION</description>
 	<namespace path="src">Aesirx\Component\AesirxAnalytics</namespace>
 	<administration>
