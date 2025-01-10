@@ -1,0 +1,26 @@
+<updates>
+    <update>
+		<name>Aesirx Analytics Component</name>
+		<description>Joomla plugin for tracking and storing the tracking data in the 1st party Aesirx Analytics server.</description>
+		<element>com_aesirx_analytics</element>
+		<type>component</type>
+		<version>4.0.0</version>
+		<client>administrator</client>
+		<downloads>
+			<downloadurl type="full" format="zip">https://github.com/aesirxio/joomla-analytics-plugin/releases/download/4.0.0/pkg_aesirx_analytics.zip</downloadurl>
+		</downloads>
+		<targetplatform name="joomla" version="((4\.(0|1|2|3|4|5))|(5\.(0|1|2|3|4|5|6|7|8|9)))" />
+	</update>
+	<update>
+		<name>Aesirx Analytics Component</name>
+		<description>Joomla plugin for tracking and storing the tracking data in the 1st party Aesirx Analytics server.</description>
+		<element>com_aesirx_analytics</element>
+		<type>component</type>
+		<version>4.1.0</version>
+		<client>administrator</client>
+		<downloads>
+			<downloadurl type="full" format="zip">https://github.com/aesirxio/joomla-analytics-plugin/releases/download/4.1.0/pkg_aesirx_analytics.zip</downloadurl>
+		</downloads>
+		<targetplatform name="joomla" version="((4\.(0|1|2|3|4|5))|(5\.(0|1|2|3|4|5|6|7|8|9)))" />
+	</update>
+</updates>
