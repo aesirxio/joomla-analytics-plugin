@@ -11,11 +11,11 @@ Class AesirX_Analytics_Get_Datastream_Template extends AesirxAnalyticsMysqlHelpe
         $componentParams = ComponentHelper::getParams('com_aesirx_analytics');
 
         return [
-            'domain'   => $componentParams->get('datastream_domain', ''),
-            'template' => $componentParams->get('datastream_template', ''),
-            'gtag_id'  => $componentParams->get('datastream_gtag_id', ''),
-            'gtm_id'   => $componentParams->get('datastream_gtm_id', ''),
-            'consent'  => $componentParams->get('datastream_consent', ''),
+            'domain'   => $componentParams->get('aesirx_analytics_plugin_options_datastream_domain', ''),
+            'template' => $componentParams->get('aesirx_analytics_plugin_options_datastream_template', ''),
+            'gtag_id'  => $componentParams->get('aesirx_analytics_plugin_options_datastream_gtag_id', ''),
+            'gtm_id'   => $componentParams->get('aesirx_analytics_plugin_options_datastream_gtm_id', ''),
+            'consent'  => $componentParams->get('aesirx_analytics_plugin_options_datastream_consent', ''),
         ];
     }
 }

@@ -113,7 +113,7 @@ class AesirxAnalyticsExtension extends CMSPlugin implements SubscriberInterface
 						],
 					];
 					$endpoint = $params->get('1st_party_server', 'internal') == 'internal'
-						? $uri->toString(['scheme', 'user', 'pass', 'host', 'port']) . Uri::base(true) . '?path='
+						? $uri->toString(['scheme', 'user', 'pass', 'host', 'port']) . Uri::base(true) . '/?path='
 						: $params->get('domain');
 
 					$clientId = $params->get('client_id');
