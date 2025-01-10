@@ -35,6 +35,7 @@ Class AesirX_Analytics_Store_Datastream_Template extends AesirxAnalyticsMysqlHel
         $table = Table::getInstance('extension');
         if ($table->load(['element' => 'com_aesirx_analytics'])) {
             $table->params = $paramsComponent->toString();
+            Factory::getCache()->clean('_system');
             if (!$table->store()) {
                 throw new Exception('Failed to save the parameters: ' . $table->getError());
             }

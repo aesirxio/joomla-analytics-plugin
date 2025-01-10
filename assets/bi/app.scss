@@ -27,6 +27,11 @@
     height: 100% !important;
     padding-top: 0;
   }
+  &.aesirxui .form-check-input {
+    &:checked[type=radio] {
+      background-image: var(--aesirxui-form-check-bg-image);
+    }
+  }
 }
 [data-bs-theme='dark'] {
   #biapp {
