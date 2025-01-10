@@ -33,7 +33,10 @@ class IsBackendMiddleware implements IMiddleware
 		if (!$this->app->isClient('administrator')
 			|| !$this->app->getIdentity()->authorise('core.manage', 'com_aesirx_analytics'))
 		{
-			throw new HttpException('Permission denied!', 403);
+			$url = $request->getUrl()->getOriginalPath();
+			if (strpos($url, 'datastream/template') === false) {
+				throw new HttpException('Permission denied!', 403);
+			}
 		}
 	}
 }

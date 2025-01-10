@@ -2,15 +2,14 @@
 
 use Aesirx\System\AesirxAnalytics\AesirxAnalyticsMysqlHelper;
 use Joomla\CMS\Factory;
-use Joomla\Filter\InputFilter;
+use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Table\Table;
 
 Class AesirX_Analytics_Store_Datastream_Template extends AesirxAnalyticsMysqlHelper
 {
     function aesirx_analytics_mysql_execute($params = [])
     {
-        $inputFilter = InputFilter::getInstance();
-
         // Create an input filter instance
         $inputFilter = InputFilter::getInstance();
 
@@ -31,6 +30,16 @@ Class AesirX_Analytics_Store_Datastream_Template extends AesirxAnalyticsMysqlHel
             // Prepare response with sanitized value
             $response[$key] = $new_value;
             }
+        }
+
+        $table = Table::getInstance('extension');
+        if ($table->load(['element' => 'com_aesirx_analytics'])) {
+            $table->params = $paramsComponent->toString();
+            if (!$table->store()) {
+                throw new Exception('Failed to save the parameters: ' . $table->getError());
+            }
+        } else {
+            throw new Exception('Failed to load the component.');
         }
 
         return $response;
