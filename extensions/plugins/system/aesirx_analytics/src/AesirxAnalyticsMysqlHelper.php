@@ -100,7 +100,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 ];
 
                 // If it's a metrics request, return the first item
-                if (isset($params['type']) && $params['type'] == "metrics") {
+                if (isset($params[1]) && $params[1] == "metrics") {
                     $list_response = $list_response['collection'][0] ?? [];
                 }
 
@@ -857,7 +857,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             }
         }
     
-        function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null) {
+        function aesirx_analytics_add_visitor_consent($visitor_uuid, $consent_uuid = null, $consent = null, $datetime = null, $expiration = null, $params = []) {
             $db = Factory::getDbo();
             $inputFilter = InputFilter::getInstance();
             $uuid = Uuid::uuid4()->toString();
@@ -1014,7 +1014,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1043,7 +1043,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1074,7 +1074,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
             try {
                 // Execute the GET request
                 $response = $http->get($apiUrl, $options);
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and handle exception
                 Log::add('API error: ' . $e->getMessage(), Log::ERROR, 'jerror');
                 Factory::getApplication()->enqueueMessage(Text::_('Something went wrong'), 'error');
@@ -1556,7 +1556,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                     Log::add('API error: Received HTTP ' . $response->code, Log::ERROR, 'aesirx-analytics');
                     return false;
                 }
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log the error and return a meaningful error message
                 Log::add('API request error: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 throw new Exception(Text::_('JERROR_AN_ERROR_OCCURRED'), 500);
@@ -1602,7 +1602,7 @@ if (!class_exists('AesirxAnalyticsMysqlHelper')) {
                 }
 
                 return $og_data;
-            } catch (Exception $e) {
+            } catch (\RuntimeException $e) {
                 // Log error and return null
                 Log::add('Failed to fetch the page: ' . $e->getMessage(), Log::ERROR, 'aesirx-analytics');
                 return null;

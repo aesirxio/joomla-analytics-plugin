@@ -103,7 +103,7 @@ Class AesirX_Analytics_Get_Live_Visitors_List extends AesirxAnalyticsMysqlHelper
             $queryEvents = $db->getQuery(true)
                 ->select('*')
                 ->from($db->quoteName('#__analytics_events'))
-                ->where($db->quoteName('flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+                ->where($db->quoteName('flow_uuid') . ' IN (' . implode(',', array_map([$db, 'quote'], $bind)) . ')');
 
             // Set the query and execute it to get events
             $db->setQuery($queryEvents);
@@ -113,7 +113,7 @@ Class AesirX_Analytics_Get_Live_Visitors_List extends AesirxAnalyticsMysqlHelper
                 ->select('*')
                 ->from($db->quoteName('#__analytics_event_attributes', 'attr'))
                 ->join('LEFT', $db->quoteName('#__analytics_events', 'evt') . ' ON ' . $db->quoteName('evt.uuid') . ' = ' . $db->quoteName('attr.event_uuid'))
-                ->where($db->quoteName('evt.flow_uuid') . ' IN (' . implode(',', array_fill(0, count($bind), $db->quote(''))) . ')');
+                ->where($db->quoteName('evt.flow_uuid') . ' IN (' . implode(',', array_map([$db, 'quote'], $bind)) . ')');
 
             // Set the query
             $db->setQuery($queryAttributes);
